@@ -164,7 +164,7 @@
                 document.getElementById('qrcode').innerHTML = "";
                 // Gantikan 'pesakit6.html' dengan URL sebenar fail anda nanti
                 const currentURL = window.location.href.replace('daftar5.html', 'pesakit6.html');
-                const finalLink = `${currentURL}?no=${no}`;
+                const finalLink = "https://fadhilmarzuki.github.io/Sistem-Panggilan_Pesakit/pesakitfinal.html?no=" + no;
                 
                 new QRCode(document.getElementById("qrcode"), { text: finalLink, width: 150, height: 150 });
                 
@@ -192,4 +192,5 @@
     }
 </script>
 </body>
+
 </html>
