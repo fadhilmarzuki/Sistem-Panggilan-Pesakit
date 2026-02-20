@@ -2,118 +2,34 @@
 <html lang="ms">
 <head>
     <meta charset="UTF-8">
-    <title>Smart TV - KK BAS (Layout Fixed)</title>
+    <title>Smart TV - KK BAS (Smart Volume Control)</title>
     <style>
-        /* Global Reset: Elak elemen melimpah dari kotak asal */
         * { box-sizing: border-box; }
-        
         body { margin: 0; padding: 0; font-family: 'Arial Black', sans-serif; background: #2c3e50; overflow: hidden; color: white; }
-        
         .header-container { display: flex; height: 15vh; border-bottom: 5px solid #fff; }
         .main-container { display: flex; height: 75vh; }
-        
-        /* Footer dengan Z-Index tinggi supaya sentiasa di atas */
-        .footer-container { 
-            height: 10vh; 
-            background: #1a73e8; 
-            display: flex; 
-            align-items: center; 
-            overflow: hidden; 
-            border-top: 5px solid #fff; 
-            position: relative;
-            z-index: 10;
-        }
-
-        .header-left { 
-            width: 70%; 
-            background: #1a73e8; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            border-right: 5px solid #fff; 
-            padding: 10px 30px;
-            text-align: center;
-        }
-        
-        #clinicName { 
-            font-size: 55px; 
-            line-height: 1.1; 
-            display: block;
-            width: 100%;
-            word-wrap: break-word;
-            white-space: pre-wrap; 
-        }
-
+        .footer-container { height: 10vh; background: #1a73e8; display: flex; align-items: center; overflow: hidden; border-top: 5px solid #fff; position: relative; z-index: 10; }
+        .header-left { width: 70%; background: #1a73e8; display: flex; align-items: center; justify-content: center; border-right: 5px solid #fff; padding: 10px 30px; text-align: center; }
+        #clinicName { font-size: 55px; line-height: 1.1; display: block; width: 100%; word-wrap: break-word; white-space: pre-wrap; }
         .header-right { width: 30%; background: #e74c3c; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .video-section { width: 70%; background: #000; border-right: 5px solid #fff; position: relative; }
-        iframe { width: 100%; height: 100%; border: none; }
-
-        /* Panel Kanan dengan kawalan limpahan */
-        .queue-section { 
-            width: 30%; 
-            background: #fff; 
-            color: #2c3e50; 
-            display: flex; 
-            flex-direction: column; 
-            overflow: hidden; 
-        }
-        
-        /* 40% Panggilan Terkini */
-        .current-call { 
-            height: 40%; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            border-bottom: 3px solid #eee; 
-            padding: 10px;
-        }
+        /* Tukar iframe kepada div untuk API YouTube */
+        #ytPlayer { width: 100%; height: 100%; }
+        .queue-section { width: 30%; background: #fff; color: #2c3e50; display: flex; flex-direction: column; overflow: hidden; }
+        .current-call { height: 40%; display: flex; flex-direction: column; align-items: center; justify-content: center; border-bottom: 3px solid #eee; padding: 10px; }
         .label-now { font-size: 18px; color: #e74c3c; font-weight: bold; }
         .num-now { font-size: 90px; font-weight: 900; color: #2c3e50; line-height: 1; margin: 5px 0; }
         .room-now { font-size: 40px; font-weight: bold; color: #1a73e8; }
-
-        /* 60% Sejarah dengan Grid Terkawal */
-        .history-section { 
-            height: 60%; 
-            padding: 10px; 
-            display: flex; 
-            flex-direction: column;
-        }
-        .history-title { 
-            text-align: center; 
-            font-size: 16px; 
-            color: #7f8c8d; 
-            border-bottom: 1px solid #ddd; 
-            padding-bottom: 5px; 
-            margin-bottom: 8px;
-            flex-shrink: 0;
-        }
-        .history-grid { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            gap: 8px; 
-            flex-grow: 1; /* Gunakan baki ruang dalam 60% tersebut */
-            align-content: start;
-        }
-        .history-item { 
-            background: #f8f9fa; 
-            border: 1px solid #e1e4e8; 
-            border-radius: 8px; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            padding: 5px;
-            height: 100%; /* Pastikan kotak ikut saiz grid */
-        }
+        .history-section { height: 60%; padding: 10px; display: flex; flex-direction: column; }
+        .history-title { text-align: center; font-size: 16px; color: #7f8c8d; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-bottom: 8px; flex-shrink: 0; }
+        .history-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex-grow: 1; align-content: start; }
+        .history-item { background: #f8f9fa; border: 1px solid #e1e4e8; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 5px; height: 100%; }
         .h-num { font-size: 26px; font-weight: 900; color: #2c3e50; }
         .h-room { font-size: 14px; color: #1a73e8; font-weight: bold; }
-
         #tvTime { font-size: 38px; font-weight: bold; }
         #tvDate { font-size: 18px; opacity: 0.9; }
         .marquee { white-space: nowrap; font-size: 28px; animation: marquee 25s linear infinite; padding-left: 100%; }
         @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
-
         #overlay { position: fixed; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.98); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         #startBtn { padding: 30px 60px; font-size: 30px; cursor: pointer; background: #27ae60; color: white; border: none; border-radius: 15px; }
         .blink { animation: blinker 1s linear 5; }
@@ -128,19 +44,12 @@
 </div>
 
 <div class="header-container">
-    <div class="header-left">
-        <div id="clinicName">KK BAS</div>
-    </div>
-    <div class="header-right">
-        <div id="tvTime">00:00:00</div>
-        <div id="tvDate">Memuatkan...</div>
-    </div>
+    <div class="header-left"><div id="clinicName">KK BAS</div></div>
+    <div class="header-right"><div id="tvTime">00:00:00</div><div id="tvDate">Memuatkan...</div></div>
 </div>
 
 <div class="main-container">
-    <div class="video-section">
-        <iframe id="ytVideo" allow="autoplay; encrypted-media"></iframe>
-    </div>
+    <div class="video-section"><div id="ytPlayer"></div></div>
     <div class="queue-section">
         <div class="current-call" id="callCard">
             <div class="label-now">PANGGILAN TERKINI</div>
@@ -158,21 +67,36 @@
     <div class="marquee" id="tvMarquee">Selamat Datang ke Klinik Kesihatan.</div>
 </div>
 
+<script src="https://www.youtube.com/iframe_api"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
 <script>
     const firebaseConfig = {
         apiKey: "AIzaSyBRK634U8ER_ZFOi1SV9nu8McndUWdD-rg",
-        databaseURL: "https://sistem-panggilan-pelanggan-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "sistem-panggilan-pelanggan",
+        databaseURL: "https://sistem-panggilan-pelanggan-default-rtdb.asia-southeast1.firebasedatabase.app"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    let player;
     let malayVoice = null;
     let systemReady = false;
-    let currentYoutubeID = "";
+    let currentYoutubeID = "77ZozI0rw7w";
+    let currentMuteStatus = "1";
+
+    // Fungsi API YouTube untuk membina pemain video
+    function onYouTubeIframeAPIReady() {
+        player = new YT.Player('ytPlayer', {
+            videoId: currentYoutubeID,
+            playerVars: { 'autoplay': 1, 'mute': 1, 'loop': 1, 'playlist': currentYoutubeID, 'controls': 0, 'rel': 0 },
+            events: { 'onReady': onPlayerReady }
+        });
+    }
+
+    function onPlayerReady(event) {
+        console.log("YouTube Player Sedia");
+    }
 
     function loadVoices() {
         const voices = window.speechSynthesis.getVoices();
@@ -183,24 +107,31 @@
 
     function announce(num, room) {
         if (!systemReady || !malayVoice) return;
+        
+        // Perlahankan video ke 20% jika suara diaktifkan
+        if (player && currentMuteStatus === "0") player.setVolume(20);
+
         const formattedNum = num.split('').join(' ');
         const text = `Nombor, ${formattedNum}. Sila ke ${room}.`;
         const msg = new SpeechSynthesisUtterance(text);
         msg.voice = malayVoice;
         msg.lang = 'ms-MY';
-        msg.rate = 0.85; 
+        msg.rate = 0.85;
+
+        // Naikkan semula volume selepas panggilan tamat
+        msg.onend = function() {
+            if (player && currentMuteStatus === "0") player.setVolume(100);
+        };
+
         window.speechSynthesis.speak(msg);
     }
 
     function fitClinicName() {
         const parent = document.querySelector('.header-left');
         const child = document.getElementById('clinicName');
-        let fontSize = 55; 
-        child.style.fontSize = fontSize + "px";
-
+        let fontSize = 55; child.style.fontSize = fontSize + "px";
         while ((child.scrollHeight > parent.clientHeight - 20 || child.scrollWidth > parent.clientWidth - 60) && fontSize > 35) {
-            fontSize--;
-            child.style.fontSize = fontSize + "px";
+            fontSize--; child.style.fontSize = fontSize + "px";
         }
     }
 
@@ -221,8 +152,10 @@
     function initTV() {
         document.getElementById('overlay').style.display = 'none';
         systemReady = true;
-        if(currentYoutubeID) {
-            document.getElementById('ytVideo').src = `https://www.youtube.com/embed/${currentYoutubeID}?autoplay=1&mute=0&loop=1&playlist=${currentYoutubeID}&enablejsapi=1&rel=0&controls=0`;
+        if (player) {
+            player.playVideo();
+            // Ikut tetapan suara asal
+            if (currentMuteStatus === "0") { player.unMute(); player.setVolume(100); } else { player.mute(); }
         }
     }
 
@@ -232,10 +165,18 @@
             document.getElementById('clinicName').innerText = s.clinic_name || "KK BAS";
             setTimeout(fitClinicName, 100); 
             document.getElementById('tvMarquee').innerText = s.message || "Selamat Datang...";
+            
             const newID = extractYoutubeID(s.youtube_link);
-            if(newID !== currentYoutubeID) {
-                currentYoutubeID = newID;
-                if(systemReady) document.getElementById('ytVideo').src = `https://www.youtube.com/embed/${newID}?autoplay=1&mute=0&loop=1&playlist=${newID}&enablejsapi=1&rel=0&controls=0`;
+            currentMuteStatus = s.sound_mute !== undefined ? s.sound_mute : "1";
+
+            if (player && player.loadVideoById) {
+                if(newID !== currentYoutubeID) {
+                    currentYoutubeID = newID;
+                    player.loadVideoById({ videoId: newID });
+                }
+                // Kemaskini suara mengikut tetapan pendaftaran
+                if (currentMuteStatus === "0" && systemReady) { player.unMute(); player.setVolume(100); } 
+                else { player.mute(); }
             }
         }
     });
@@ -256,20 +197,11 @@
     db.ref('queue_system/waiting_list').on('value', snap => {
         const list = snap.val();
         if (!list) return;
-
-        const historyData = Object.keys(list)
-            .map(key => ({ number: key, ...list[key] }))
-            .filter(item => item.status === 'called')
-            .sort((a, b) => b.timestamp - a.timestamp)
-            .slice(0, 6);
-
+        const historyData = Object.keys(list).map(key => ({ number: key, ...list[key] })).filter(item => item.status === 'called').sort((a, b) => b.timestamp - a.timestamp).slice(0, 6);
         const grid = document.getElementById('historyGrid');
         grid.innerHTML = "";
-        historyData.forEach(item => {
-            grid.innerHTML += `<div class="history-item"><div class="h-num">${item.number}</div><div class="h-room">${item.calledBy || 'Bilik'}</div></div>`;
-        });
+        historyData.forEach(item => { grid.innerHTML += `<div class="history-item"><div class="h-num">${item.number}</div><div class="h-room">${item.calledBy || 'Bilik'}</div></div>`; });
     });
 </script>
 </body>
-
 </html>
