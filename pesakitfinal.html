@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Status Pesakit - Live</title>
+    <title>Status Pesakit - SPGP JKN Kedah</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; margin: 0; padding: 20px; display: flex; justify-content: center; }
@@ -15,11 +15,17 @@
         .waiting { background: #fff3cd; color: #856404; }
         .called { background: #d4edda; color: #155724; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
-        input { width: 100%; padding: 15px; border-radius: 12px; border: 2px solid #ddd; text-align: center; font-size: 22px; margin-bottom: 15px; }
-        .btn-primary { width: 100%; padding: 15px; background: #1a73e8; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 18px; }
+        
+        input { width: 100%; padding: 15px; border-radius: 12px; border: 2px solid #ddd; text-align: center; font-size: 20px; margin-bottom: 15px; }
+        .btn-primary { width: 100%; padding: 15px; background: #1a73e8; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 18px; margin-bottom: 10px; }
+        .btn-secondary { width: 100%; padding: 12px; background: #34495e; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        
         #comingBtn { background: #e67e22; color: white; border: none; padding: 18px; border-radius: 12px; font-weight: bold; font-size: 16px; margin-top: 20px; cursor: pointer; width: 100%; }
         #comingBtn:disabled { background: #bdc3c7; cursor: not-allowed; }
-        .staff-only { font-size: 11px; color: #7f8c8d; margin-top: 5px; font-style: italic; }
+        
+        .divider { margin: 25px 0; border-top: 1px solid #eee; position: relative; }
+        .divider span { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: white; padding: 0 15px; color: #95a5a6; font-size: 14px; }
+        
         .info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .info-label { color: #7f8c8d; font-size: 14px; }
         .info-val { font-weight: bold; font-size: 18px; }
@@ -30,12 +36,18 @@
 
 <div class="container">
     <div class="card" id="loginView">
-        <h1 id="dispClinicName">Klinik Kesihatan</h1>
+        <h1 id="dispClinicName" style="font-size: 24px; color: #2c3e50;">Klinik Kesihatan</h1>
         
         <div id="manualInput">
-            <p>Masukkan nombor giliran anda</p>
+            <p style="margin-top: 20px; color: #7f8c8d;">Pilihan 1: Masukkan No. Giliran</p>
             <input type="text" id="inputNum" placeholder="Contoh: A-001">
             <button class="btn-primary" onclick="checkStatus()">MULA PANTAU</button>
+
+            <div class="divider"><span>ATAU</span></div>
+
+            <p style="color: #7f8c8d;">Pilihan 2: Semak Guna No. IC</p>
+            <input type="text" id="inputIC" placeholder="Masukkan No. IC Anda">
+            <button class="btn-secondary" onclick="checkByIC()">CARI NOMBOR SAYA</button>
         </div>
 
         <div id="qrWelcome" style="display:none;">
@@ -71,17 +83,12 @@
 
         <button id="comingBtn" style="display:none;" onclick="notifyDoctor()">SAYA SEDANG MENUJU KE SANA</button>
         
-        <div id="customMsg" style="margin-top:20px; font-style:italic; color:#7f8c8d; font-size: 13px; line-height: 1.4;">
-            Harap bersabar. Anda akan dilayan sebentar lagi. Terima kasih.
-        </div>
-
         <div class="instruction-note">
-            ⚠️ <b>Peringatan:</b> Sila pastikan tab ini kekal terbuka di telefon anda. Jangan tutup pelayar web (browser) agar anda tetap menerima notifikasi panggilan.
+            ⚠️ <b>Peringatan:</b> Sila pastikan tab ini kekal terbuka agar anda tetap menerima notifikasi panggilan.
         </div>
         
         <div style="margin-top: 30px;">
-            <button style="background:transparent; color:#7f8c8d; border:none; text-decoration:underline; cursor:pointer;" onclick="location.reload()">Tukar Nombor</button>
-            <div class="staff-only">(Hanya untuk kegunaan staf)</div>
+            <button style="background:transparent; color:#7f8c8d; border:none; text-decoration:underline; cursor:pointer;" onclick="location.reload()">Tukar Nombor / IC</button>
         </div>
     </div>
 </div>
@@ -108,7 +115,6 @@
         }
     });
 
-    // Logik Auto-Login melalui QR Code
     window.onload = function() {
         const urlParams = new URLSearchParams(window.location.search);
         const ticketNo = urlParams.get('no');
@@ -120,16 +126,29 @@
         }
     };
 
+    // FUNGSI SEMAKAN GUNA IC
+    function checkByIC() {
+        const ic = document.getElementById('inputIC').value.trim();
+        if(!ic) return alert("Sila masukkan No. IC!");
+
+        db.ref('queue_system/waiting_list').orderByChild('ic').equalTo(ic).once('value', snap => {
+            if(snap.exists()) {
+                let foundNo = "";
+                snap.forEach(child => { foundNo = child.key; }); // Ambil nombor giliran terkini
+                document.getElementById('inputNum').value = foundNo;
+                checkStatus(); // Terus jalankan pemantauan
+            } else {
+                alert("Tiada rekod giliran dijumpai untuk No. IC ini bagi hari ini.");
+            }
+        });
+    }
+
     function checkStatus() {
         const num = document.getElementById('inputNum').value.toUpperCase().trim();
         if(!num) return;
 
-        // "Unlock" audio pelayar melalui interaksi klik
         const audio = document.getElementById('alertSound');
-        audio.play().then(() => { 
-            audio.pause(); 
-            audio.currentTime = 0; 
-        }).catch(e => console.log("Audio unlock failed"));
+        audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(e => {});
 
         db.ref('queue_system/waiting_list/' + num).once('value', (snap) => {
             if (!snap.exists()) { alert("Nombor giliran tidak sah!"); return; }
