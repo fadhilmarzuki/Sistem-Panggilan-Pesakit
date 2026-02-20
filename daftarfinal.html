@@ -3,15 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pendaftaran Klinik - Pro Stats + QR</title>
+    <title>Pendaftaran SPGP - Unit NCD JKN Kedah</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f0f4f8; padding: 20px; }
-        .container { max-width: 900px; margin: auto; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f0f4f8; padding: 20px; margin: 0; }
+        .container { max-width: 900px; margin: auto; padding-bottom: 50px; }
+        
+        /* Gaya Pengepala Baru */
+        .top-bar { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 15px; 
+            color: #7f8c8d; 
+            font-weight: bold;
+            font-size: 14px;
+        }
+
         .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
         h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-top: 0; }
         label { display: block; margin-top: 15px; font-weight: bold; color: #34495e; }
         input, button, select, textarea { width: 100%; padding: 12px; margin-top: 5px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
+        
         .btn-daftar { background: #27ae60; color: white; border: none; font-weight: bold; cursor: pointer; height: 55px; font-size: 18px; margin-top: 15px; }
         .btn-semak { background: #3498db; color: white; border: none; font-weight: bold; cursor: pointer; height: 45px; margin-top: 10px; }
         
@@ -25,14 +38,26 @@
         .stat-label { font-size: 11px; text-transform: uppercase; opacity: 0.9; }
 
         #qrContainer { display: flex; flex-direction: column; align-items: center; margin-top: 15px; padding: 15px; background: #fff; border-radius: 10px; border: 1px solid #eee; }
-        /* Update style untuk search-result supaya butang tengah */
         .search-result { margin-top: 15px; padding: 15px; border: 1px solid #3498db; border-radius: 10px; background: #ebf5fb; display: none; text-align: center; }
+
+        /* Gaya Footer Baru */
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: #bdc3c7;
+            font-size: 13px;
+            border-top: 1px solid #e0e6ed;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="liveClock" style="text-align:right; font-weight:bold; margin-bottom:10px;"></div>
+    <div class="top-bar">
+        <div>Sistem Pengurusan Giliran Pesakit (SPGP)</div>
+        <div id="liveClock">Memuatkan masa...</div>
+    </div>
     
     <div class="tab-bar">
         <button id="tab1" class="tab-btn active-tab" onclick="showSection('pendaftaran')">PENDAFTARAN</button>
@@ -67,7 +92,6 @@
         <hr style="margin: 40px 0; border: 0; border-top: 2px dashed #ddd;">
 
         <h2>Semakan Nombor Giliran</h2>
-        <p style="font-size: 13px; color: #7f8c8d;">Gunakan bahagian ini jika pesakit terlupa atau kehilangan nombor mereka.</p>
         <input type="text" id="searchIC" placeholder="Masukkan No. IC Pesakit">
         <button class="btn-semak" onclick="semakIC()">CARI NOMBOR</button>
 
@@ -103,6 +127,10 @@
         <hr style="margin:40px 0;">
         <button onclick="confirmReset()" style="background:#e74c3c; color:white; border:none; padding:15px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%;">DAILY RESET (SET SEMULA NOMBOR)</button>
     </div>
+
+    <div class="footer">
+        Hak Cipta Terpelihara &copy; 2026 Unit NCD JKN Kedah
+    </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
@@ -120,7 +148,13 @@
         document.getElementById('servInputs').innerHTML += `<div style="display:flex; gap:5px; margin-bottom:5px;"><input type="text" id="servName${i}" placeholder="Unit ${i}"><input type="text" id="servAbjad${i}" placeholder="A" maxlength="1" style="width:50px; text-align:center;"></div>`;
     }
 
-    function updateClock() { document.getElementById('liveClock').innerText = new Date().toLocaleString('ms-MY'); }
+    function updateClock() { 
+        const now = new Date();
+        document.getElementById('liveClock').innerText = now.toLocaleString('ms-MY', { 
+            day: 'numeric', month: 'numeric', year: 'numeric', 
+            hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true 
+        }).toUpperCase();
+    }
     setInterval(updateClock, 1000);
 
     db.ref('queue_system/waiting_list').on('value', snap => {
@@ -197,7 +231,6 @@
     function semakIC() {
         const icValue = document.getElementById('searchIC').value.trim();
         if(!icValue) return alert("Sila masukkan No. IC untuk carian.");
-        // Pastikan hasil carian lama ditutup dulu sebelum carian baru
         document.getElementById('searchResult').style.display = "none";
 
         db.ref('queue_system/waiting_list').orderByChild('ic').equalTo(icValue).once('value', snap => {
@@ -222,7 +255,7 @@
                 qrBox.innerHTML = "";
                 const finalLink = `https://fadhilmarzuki.github.io/Sistem-Panggilan-Pesakit/pesakitfinal.html?no=${foundNo}`;
                 new QRCode(qrBox, { text: finalLink, width: 120, height: 120 });
-                document.getElementById('searchIC').value = ""; // Kosongkan input selepas berjaya
+                document.getElementById('searchIC').value = "";
             } else {
                 alert("Tiada rekod giliran dijumpai untuk No. IC ini bagi hari ini.");
             }
