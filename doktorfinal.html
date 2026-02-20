@@ -12,6 +12,7 @@
         select, input, button { width: 100%; padding: 12px; margin-top: 8px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; transition: 0.3s; }
         
         .btn-next { background: #27ae60; color: white; border: none; font-weight: bold; cursor: pointer; height: 60px; font-size: 20px; margin-bottom: 10px; }
+        .btn-manual { background: #3498db; color: white; border: none; font-weight: bold; cursor: pointer; height: 45px; margin-top: 10px; font-size: 14px; }
         .btn-recall { background: #e67e22; color: white; border: none; font-weight: bold; cursor: pointer; height: 50px; margin-bottom: 10px; }
         .btn-back { background: #f1f2f6; color: #7f8c8d; border: 1px solid #ddd; font-weight: bold; cursor: pointer; height: 50px; }
         
@@ -27,6 +28,7 @@
 
 <div class="container">
     <div id="liveClock" style="text-align:center; font-weight:bold; color:#7f8c8d; margin-bottom:10px;"></div>
+    
     <div class="card">
         <h2>Konfigurasi Stesen</h2>
         <label>Bilik / Stesen Anda:</label>
@@ -34,6 +36,14 @@
         
         <label>Perkhidmatan Dipantau:</label>
         <select id="selectService" onchange="updateWaitingCount()"><option value="PELBAGAI">-- PELBAGAI --</option></select>
+        
+        <div style="margin-top:20px; padding-top:15px; border-top:1px dashed #ddd;">
+            <label>Panggilan No. Manual:</label>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="manualNum" placeholder="Contoh: A-005" style="margin-top:0;">
+                <button class="btn-manual" onclick="manualCall()" style="margin-top:0; width: 40%;">PANGGIL</button>
+            </div>
+        </div>
     </div>
 
     <div class="card" style="text-align: center;">
@@ -109,6 +119,32 @@
         });
     }
 
+    // FUNGSI PANGGILAN MANUAL
+    function manualCall() {
+        const num = document.getElementById('manualNum').value.toUpperCase().trim();
+        const sR = document.getElementById('selectRoom').value;
+        
+        if(!sR) return alert("Sila pilih bilik anda!");
+        if(!num) return alert("Sila masukkan nombor giliran!");
+        if(session.current) return alert("Sila selesaikan pesakit semasa dahulu!");
+
+        db.ref('queue_system/waiting_list/' + num).once('value', snap => {
+            if(!snap.exists()) return alert("Nombor giliran tidak wujud!");
+            
+            const p = snap.val();
+            session.current = num;
+            session.service = p.service;
+            
+            db.ref('queue_system/waiting_list/' + num).update({ status: 'called', calledBy: sR, isComing: false, lastRecall: null });
+            db.ref('queue_system/current_calling').set({ number: num, room: sR, service: p.service, time: Date.now() });
+            
+            document.getElementById('displayNum').innerText = num;
+            document.getElementById('transferArea').style.display = 'block';
+            document.getElementById('manualNum').value = ""; // Kosongkan input
+            listenForPatientStatus(num, p.service);
+        });
+    }
+
     function callNext() {
         const sR = document.getElementById('selectRoom').value;
         const sS = document.getElementById('selectService').value;
@@ -134,9 +170,7 @@
 
     function recallPatient() {
         if(!session.current) return alert("Tiada pesakit aktif.");
-        const sR = document.getElementById('selectRoom').value;
         const now = Date.now();
-        
         db.ref('queue_system/current_calling').update({ time: now });
         db.ref('queue_system/waiting_list/' + session.current).update({ lastRecall: now });
     }
