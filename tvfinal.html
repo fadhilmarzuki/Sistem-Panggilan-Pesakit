@@ -2,7 +2,7 @@
 <html lang="ms">
 <head>
     <meta charset="UTF-8">
-    <title>Smart TV - KK BAS (Smart Volume Control)</title>
+    <title>Smart TV - KK BAS (Remote Friendly)</title>
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; padding: 0; font-family: 'Arial Black', sans-serif; background: #2c3e50; overflow: hidden; color: white; }
@@ -13,7 +13,6 @@
         #clinicName { font-size: 55px; line-height: 1.1; display: block; width: 100%; word-wrap: break-word; white-space: pre-wrap; }
         .header-right { width: 30%; background: #e74c3c; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .video-section { width: 70%; background: #000; border-right: 5px solid #fff; position: relative; }
-        /* Tukar iframe kepada div untuk API YouTube */
         #ytPlayer { width: 100%; height: 100%; }
         .queue-section { width: 30%; background: #fff; color: #2c3e50; display: flex; flex-direction: column; overflow: hidden; }
         .current-call { height: 40%; display: flex; flex-direction: column; align-items: center; justify-content: center; border-bottom: 3px solid #eee; padding: 10px; }
@@ -30,8 +29,12 @@
         #tvDate { font-size: 18px; opacity: 0.9; }
         .marquee { white-space: nowrap; font-size: 28px; animation: marquee 25s linear infinite; padding-left: 100%; }
         @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
+        
+        /* Overlay Baru */
         #overlay { position: fixed; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.98); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        #startBtn { padding: 30px 60px; font-size: 30px; cursor: pointer; background: #27ae60; color: white; border: none; border-radius: 15px; }
+        #startBtn { padding: 30px 60px; font-size: 35px; cursor: pointer; background: #27ae60; color: white; border: 5px solid white; border-radius: 20px; outline: none; transition: 0.3s; }
+        /* Kesan apabila butang dipilih guna remote */
+        #startBtn:focus { transform: scale(1.1); background: #2ecc71; box-shadow: 0 0 30px #27ae60; }
         .blink { animation: blinker 1s linear 5; }
         @keyframes blinker { 50% { opacity: 0; } }
     </style>
@@ -39,8 +42,9 @@
 <body>
 
 <div id="overlay">
-    <h1 style="color:white; margin-bottom:30px;">SISTEM PANGGILAN KK BAS</h1>
-    <button id="startBtn" onclick="initTV()">MULA PAPARAN TV</button>
+    <h1 style="color:white; margin-bottom:10px;">SISTEM PANGGILAN KK BAS</h1>
+    <p style="color:white; opacity:0.8; margin-bottom:30px;">Tekan butang 'OK' atau 'ENTER' pada remote untuk mula</p>
+    <button id="startBtn" onclick="initTV()" autofocus>MULA PAPARAN TV</button>
 </div>
 
 <div class="header-container">
@@ -79,13 +83,18 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let player;
-    let malayVoice = null;
-    let systemReady = false;
-    let currentYoutubeID = "77ZozI0rw7w";
-    let currentMuteStatus = "1";
+    let player, malayVoice, systemReady = false, currentYoutubeID = "77ZozI0rw7w", currentMuteStatus = "1";
 
-    // Fungsi API YouTube untuk membina pemain video
+    // Autofokus butang setiap kali laman dibuka
+    window.onload = function() {
+        document.getElementById('startBtn').focus();
+    };
+
+    // Benarkan tekan mana-mana butang pada remote untuk mula
+    window.addEventListener('keydown', function(e) {
+        if(!systemReady) initTV();
+    });
+
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('ytPlayer', {
             videoId: currentYoutubeID,
@@ -94,9 +103,7 @@
         });
     }
 
-    function onPlayerReady(event) {
-        console.log("YouTube Player Sedia");
-    }
+    function onPlayerReady(event) { console.log("Player Ready"); }
 
     function loadVoices() {
         const voices = window.speechSynthesis.getVoices();
@@ -107,22 +114,11 @@
 
     function announce(num, room) {
         if (!systemReady || !malayVoice) return;
-        
-        // Perlahankan video ke 20% jika suara diaktifkan
         if (player && currentMuteStatus === "0") player.setVolume(20);
-
         const formattedNum = num.split('').join(' ');
-        const text = `Nombor, ${formattedNum}. Sila ke ${room}.`;
-        const msg = new SpeechSynthesisUtterance(text);
-        msg.voice = malayVoice;
-        msg.lang = 'ms-MY';
-        msg.rate = 0.85;
-
-        // Naikkan semula volume selepas panggilan tamat
-        msg.onend = function() {
-            if (player && currentMuteStatus === "0") player.setVolume(100);
-        };
-
+        const msg = new SpeechSynthesisUtterance(`Nombor, ${formattedNum}. Sila ke ${room}.`);
+        msg.voice = malayVoice; msg.lang = 'ms-MY'; msg.rate = 0.85;
+        msg.onend = function() { if (player && currentMuteStatus === "0") player.setVolume(100); };
         window.speechSynthesis.speak(msg);
     }
 
@@ -136,25 +132,17 @@
     }
 
     function extractYoutubeID(url) {
-        if (!url) return "77ZozI0rw7w";
         const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
-        const match = url.match(regExp);
+        const match = url?.match(regExp);
         return (match && match[7].length == 11) ? match[7] : "77ZozI0rw7w";
     }
 
-    function updateClock() {
-        const now = new Date();
-        document.getElementById('tvTime').innerText = now.toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }).toUpperCase();
-        document.getElementById('tvDate').innerText = now.toLocaleDateString('ms-MY', { weekday: 'short', day: 'numeric', month: 'short' });
-    }
-    setInterval(updateClock, 1000);
-
     function initTV() {
+        if(systemReady) return;
         document.getElementById('overlay').style.display = 'none';
         systemReady = true;
         if (player) {
             player.playVideo();
-            // Ikut tetapan suara asal
             if (currentMuteStatus === "0") { player.unMute(); player.setVolume(100); } else { player.mute(); }
         }
     }
@@ -165,18 +153,11 @@
             document.getElementById('clinicName').innerText = s.clinic_name || "KK BAS";
             setTimeout(fitClinicName, 100); 
             document.getElementById('tvMarquee').innerText = s.message || "Selamat Datang...";
-            
             const newID = extractYoutubeID(s.youtube_link);
             currentMuteStatus = s.sound_mute !== undefined ? s.sound_mute : "1";
-
             if (player && player.loadVideoById) {
-                if(newID !== currentYoutubeID) {
-                    currentYoutubeID = newID;
-                    player.loadVideoById({ videoId: newID });
-                }
-                // Kemaskini suara mengikut tetapan pendaftaran
-                if (currentMuteStatus === "0" && systemReady) { player.unMute(); player.setVolume(100); } 
-                else { player.mute(); }
+                if(newID !== currentYoutubeID) { currentYoutubeID = newID; player.loadVideoById({ videoId: newID }); }
+                if (currentMuteStatus === "0" && systemReady) { player.unMute(); player.setVolume(100); } else { player.mute(); }
             }
         }
     });
@@ -187,21 +168,25 @@
             document.getElementById('tvNum').innerText = d.number;
             document.getElementById('tvRoom').innerText = d.room;
             const card = document.getElementById('callCard');
-            card.classList.remove('blink');
-            void card.offsetWidth; 
-            card.classList.add('blink');
+            card.classList.remove('blink'); void card.offsetWidth; card.classList.add('blink');
             announce(d.number, d.room);
         }
     });
 
     db.ref('queue_system/waiting_list').on('value', snap => {
-        const list = snap.val();
-        if (!list) return;
-        const historyData = Object.keys(list).map(key => ({ number: key, ...list[key] })).filter(item => item.status === 'called').sort((a, b) => b.timestamp - a.timestamp).slice(0, 6);
+        const list = snap.val(); if (!list) return;
+        const historyData = Object.keys(list).map(k => ({ number: k, ...list[k] })).filter(i => i.status === 'called').sort((a, b) => b.timestamp - a.timestamp).slice(0, 6);
         const grid = document.getElementById('historyGrid');
         grid.innerHTML = "";
-        historyData.forEach(item => { grid.innerHTML += `<div class="history-item"><div class="h-num">${item.number}</div><div class="h-room">${item.calledBy || 'Bilik'}</div></div>`; });
+        historyData.forEach(i => { grid.innerHTML += `<div class="history-item"><div class="h-num">${i.number}</div><div class="h-room">${i.calledBy || 'Bilik'}</div></div>`; });
     });
+
+    function updateClock() {
+        const now = new Date();
+        document.getElementById('tvTime').innerText = now.toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }).toUpperCase();
+        document.getElementById('tvDate').innerText = now.toLocaleDateString('ms-MY', { weekday: 'short', day: 'numeric', month: 'short' });
+    }
+    setInterval(updateClock, 1000);
 </script>
 </body>
 </html>
