@@ -23,6 +23,7 @@
         .info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .info-label { color: #7f8c8d; font-size: 14px; }
         .info-val { font-weight: bold; font-size: 18px; }
+        .instruction-note { font-size: 12px; color: #e74c3c; margin-top: 15px; font-style: italic; border: 1px dashed #e74c3c; padding: 10px; border-radius: 10px; }
     </style>
 </head>
 <body>
@@ -30,9 +31,21 @@
 <div class="container">
     <div class="card" id="loginView">
         <h1 id="dispClinicName">Klinik Kesihatan</h1>
-        <p>Masukkan nombor giliran anda</p>
-        <input type="text" id="inputNum" placeholder="Contoh: A-001">
-        <button class="btn-primary" onclick="checkStatus()">MULA PANTAU</button>
+        
+        <div id="manualInput">
+            <p>Masukkan nombor giliran anda</p>
+            <input type="text" id="inputNum" placeholder="Contoh: A-001">
+            <button class="btn-primary" onclick="checkStatus()">MULA PANTAU</button>
+        </div>
+
+        <div id="qrWelcome" style="display:none;">
+            <p>Nombor giliran dikesan:</p>
+            <div id="detectedNum" style="font-size: 55px; font-weight: 900; color: #1a73e8; margin: 15px 0;">---</div>
+            <button class="btn-primary" onclick="checkStatus()" style="background:#27ae60;">AKTIFKAN NOTIFIKASI</button>
+            <p style="font-size:13px; color:#e74c3c; margin-top:15px; font-weight:bold;">
+                Wajib tekan butang di atas untuk aktifkan suara & getaran panggilan.
+            </p>
+        </div>
     </div>
 
     <div class="card" id="statusView" style="display:none;">
@@ -57,8 +70,13 @@
         </div>
 
         <button id="comingBtn" style="display:none;" onclick="notifyDoctor()">SAYA SEDANG MENUJU KE SANA</button>
+        
         <div id="customMsg" style="margin-top:20px; font-style:italic; color:#7f8c8d; font-size: 13px; line-height: 1.4;">
             Harap bersabar. Anda akan dilayan sebentar lagi. Terima kasih.
+        </div>
+
+        <div class="instruction-note">
+            ⚠️ <b>Peringatan:</b> Sila pastikan tab ini kekal terbuka di telefon anda. Jangan tutup pelayar web (browser) agar anda tetap menerima notifikasi panggilan.
         </div>
         
         <div style="margin-top: 30px;">
@@ -90,19 +108,29 @@
         }
     });
 
-    // Auto-login melalui QR Code
+    // Logik Auto-Login melalui QR Code
     window.onload = function() {
         const urlParams = new URLSearchParams(window.location.search);
         const ticketNo = urlParams.get('no');
         if(ticketNo) {
+            document.getElementById('manualInput').style.display = 'none';
+            document.getElementById('qrWelcome').style.display = 'block';
+            document.getElementById('detectedNum').innerText = ticketNo.toUpperCase();
             document.getElementById('inputNum').value = ticketNo.toUpperCase();
-            checkStatus();
         }
     };
 
     function checkStatus() {
         const num = document.getElementById('inputNum').value.toUpperCase().trim();
         if(!num) return;
+
+        // "Unlock" audio pelayar melalui interaksi klik
+        const audio = document.getElementById('alertSound');
+        audio.play().then(() => { 
+            audio.pause(); 
+            audio.currentTime = 0; 
+        }).catch(e => console.log("Audio unlock failed"));
+
         db.ref('queue_system/waiting_list/' + num).once('value', (snap) => {
             if (!snap.exists()) { alert("Nombor giliran tidak sah!"); return; }
             document.getElementById('loginView').style.display = 'none';
@@ -122,7 +150,6 @@
                 const btn = document.getElementById('comingBtn');
                 btn.style.display = 'block';
                 
-                // PEMBETULAN: Aktifkan semula butang jika data isComing adalah false
                 if(!data.isComing) {
                     btn.innerText = "SAYA SEDANG MENUJU KE SANA";
                     btn.disabled = false;
@@ -172,7 +199,7 @@
     function playSound() {
         const audio = document.getElementById('alertSound');
         audio.currentTime = 0; audio.play().catch(e => {});
-        if(window.navigator.vibrate) window.navigator.vibrate([200, 100, 200]);
+        if(window.navigator.vibrate) window.navigator.vibrate([300, 100, 300, 100, 300]);
     }
 
     function notifyDoctor() {
