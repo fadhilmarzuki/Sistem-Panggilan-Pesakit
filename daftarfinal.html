@@ -12,20 +12,21 @@
         h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-top: 0; }
         label { display: block; margin-top: 15px; font-weight: bold; color: #34495e; }
         input, button, select, textarea { width: 100%; padding: 12px; margin-top: 5px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
-        .btn-daftar { background: #27ae60; color: white; border: none; font-weight: bold; cursor: pointer; height: 55px; font-size: 18px; }
+        .btn-daftar { background: #27ae60; color: white; border: none; font-weight: bold; cursor: pointer; height: 55px; font-size: 18px; margin-top: 15px; }
+        .btn-semak { background: #3498db; color: white; border: none; font-weight: bold; cursor: pointer; height: 45px; margin-top: 10px; }
         
         .tab-bar { display: flex; gap: 5px; margin-bottom: 15px; }
         .tab-btn { flex: 1; padding: 15px; cursor: pointer; background: #d1d8e0; border: none; font-weight: bold; border-radius: 10px 10px 0 0; }
         .active-tab { background: #fff; color: #1a73e8; border-bottom: 3px solid #1a73e8; }
         
-        /* Statistik Unit */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 15px; }
         .stat-item { background: rgba(255,255,255,0.2); padding: 10px; border-radius: 10px; text-align: center; border: 1px solid rgba(255,255,255,0.3); }
         .stat-val { font-size: 24px; font-weight: bold; }
         .stat-label { font-size: 11px; text-transform: uppercase; opacity: 0.9; }
 
-        /* QR Code Container */
         #qrContainer { display: flex; flex-direction: column; align-items: center; margin-top: 15px; padding: 15px; background: #fff; border-radius: 10px; border: 1px solid #eee; }
+        /* Update style untuk search-result supaya butang tengah */
+        .search-result { margin-top: 15px; padding: 15px; border: 1px solid #3498db; border-radius: 10px; background: #ebf5fb; display: none; text-align: center; }
     </style>
 </head>
 <body>
@@ -40,16 +41,16 @@
 
     <div class="card" style="background: #1a73e8; color: white;">
         <div style="text-align:center; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 10px;">
-            <div style="font-size: 14px; opacity: 0.9;">JUMLAH KESELURUHAN HARI INI</div>
+            <div style="font-size: 14px; opacity: 0.9;">BAKI MENUNGGU SEKARANG</div>
             <div id="totalToday" style="font-size: 45px; font-weight: bold;">0</div>
         </div>
         <div class="stats-grid" id="serviceStats"></div>
     </div>
 
     <div id="sec-pendaftaran" class="card">
-        <h2>Daftar Pesakit</h2>
+        <h2>Daftar Pesakit Baru</h2>
         <label>No. Kad Pengenalan:</label>
-        <input type="text" id="patientIC" placeholder="Masukkan IC">
+        <input type="text" id="patientIC" placeholder="Contoh: 900101025566">
         <label>Pilih Unit/Perkhidmatan:</label>
         <select id="regService"><option value="">-- Sila Pilih --</option></select>
         <button class="btn-daftar" onclick="daftarPesakit()">DAFTAR & JANA QR</button>
@@ -62,18 +63,33 @@
             </div>
             <button onclick="this.parentElement.style.display='none'" style="background:#95a5a6; color:white; border:none; margin-top:10px; padding:8px; border-radius:5px; width:auto; cursor:pointer;">Tutup</button>
         </div>
+
+        <hr style="margin: 40px 0; border: 0; border-top: 2px dashed #ddd;">
+
+        <h2>Semakan Nombor Giliran</h2>
+        <p style="font-size: 13px; color: #7f8c8d;">Gunakan bahagian ini jika pesakit terlupa atau kehilangan nombor mereka.</p>
+        <input type="text" id="searchIC" placeholder="Masukkan No. IC Pesakit">
+        <button class="btn-semak" onclick="semakIC()">CARI NOMBOR</button>
+
+        <div id="searchResult" class="search-result">
+            <div id="searchInfo" style="text-align:center;"></div>
+            <div id="searchQrContainer" style="display: flex; flex-direction: column; align-items: center; margin-top: 10px;">
+                <div id="searchQrcode"></div>
+            </div>
+            <button onclick="this.parentElement.style.display='none'" style="background:#95a5a6; color:white; border:none; margin-top:15px; padding:8px 20px; border-radius:5px; width:auto; cursor:pointer; font-weight:bold;">Tutup Semakan</button>
+        </div>
     </div>
 
     <div id="sec-tetapan" class="card" style="display:none;">
         <h2>Tetapan & Daily Reset</h2>
-        <label>Nama Klinik (Boleh Enter untuk baris baru):</label>
+        <label>Nama Klinik:</label>
         <textarea id="confClinicName" rows="2"></textarea>
-        <label>Mesej Mesej Marquee (Bawah):</label>
+        <label>Mesej Marquee (Bawah TV):</label>
         <input type="text" id="confMessage">
         <label>Pautan Video YouTube:</label>
         <input type="text" id="confYoutube">
         
-        <label>Mainkan Suara Video di TV:</label>
+        <label>Suara Video di TV:</label>
         <select id="confSound">
             <option value="1">MUTE (Tiada Suara)</option>
             <option value="0">ON (Ada Suara)</option>
@@ -99,7 +115,6 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Jana input bilik dan unit secara automatik
     for(let i=1; i<=10; i++) {
         document.getElementById('roomInputs').innerHTML += `<input type="text" id="roomName${i}" placeholder="Bilik ${i}">`;
         document.getElementById('servInputs').innerHTML += `<div style="display:flex; gap:5px; margin-bottom:5px;"><input type="text" id="servName${i}" placeholder="Unit ${i}"><input type="text" id="servAbjad${i}" placeholder="A" maxlength="1" style="width:50px; text-align:center;"></div>`;
@@ -108,13 +123,20 @@
     function updateClock() { document.getElementById('liveClock').innerText = new Date().toLocaleString('ms-MY'); }
     setInterval(updateClock, 1000);
 
-    // Statistik Unit secara Real-time
     db.ref('queue_system/waiting_list').on('value', snap => {
         const data = snap.val() || {};
-        document.getElementById('totalToday').innerText = snap.numChildren();
-        const counts = {};
-        Object.values(data).forEach(p => { if(p.status === 'waiting') counts[p.service] = (counts[p.service] || 0) + 1; });
         const statsGrid = document.getElementById('serviceStats');
+        let totalWaiting = 0;
+        const counts = {};
+        
+        Object.values(data).forEach(p => { 
+            if(p.status === 'waiting') {
+                totalWaiting++;
+                counts[p.service] = (counts[p.service] || 0) + 1; 
+            }
+        });
+        
+        document.getElementById('totalToday').innerText = totalWaiting;
         statsGrid.innerHTML = "";
         Object.keys(counts).forEach(srv => { statsGrid.innerHTML += `<div class="stat-item"><div class="stat-val">${counts[srv]}</div><div class="stat-label">${srv}</div></div>`; });
     });
@@ -126,8 +148,7 @@
             document.getElementById('confClinicName').value = s.clinic_name || "";
             document.getElementById('confMessage').value = s.message || "";
             document.getElementById('confYoutube').value = s.youtube_link || "";
-            if(s.sound_mute !== undefined) document.getElementById('confSound').value = s.sound_mute; // Muat tetapan suara
-            
+            if(s.sound_mute !== undefined) document.getElementById('confSound').value = s.sound_mute;
             if(s.rooms) s.rooms.forEach((r, i) => { if(document.getElementById(`roomName${i+1}`)) document.getElementById(`roomName${i+1}`).value = r; });
             servicesData = s.services || [];
             const regDropdown = document.getElementById('regService');
@@ -148,18 +169,11 @@
             roomsArr.push(document.getElementById(`roomName${i}`).value);
             servsArr.push({ name: document.getElementById(`servName${i}`).value, abjad: document.getElementById(`servAbjad${i}`).value.toUpperCase() || "A" });
         }
-        db.ref('queue_system/settings').set({ 
-            clinic_name: document.getElementById('confClinicName').value, 
-            message: document.getElementById('confMessage').value, 
-            youtube_link: document.getElementById('confYoutube').value,
-            sound_mute: document.getElementById('confSound').value, // Simpan tetapan suara
-            rooms: roomsArr, 
-            services: servsArr 
-        }).then(() => alert("Tetapan Berjaya Disimpan!"));
+        db.ref('queue_system/settings').set({ clinic_name: document.getElementById('confClinicName').value, message: document.getElementById('confMessage').value, youtube_link: document.getElementById('confYoutube').value, sound_mute: document.getElementById('confSound').value, rooms: roomsArr, services: servsArr }).then(() => alert("Simpan Berjaya!"));
     }
 
     function daftarPesakit() {
-        const ic = document.getElementById('patientIC').value;
+        const ic = document.getElementById('patientIC').value.trim();
         const serviceName = document.getElementById('regService').value;
         if(!ic || !serviceName) return alert("Sila isi IC dan Pilih Unit!");
         const prefix = (servicesData.find(s => s.name === serviceName) || {abjad:"A"}).abjad;
@@ -170,7 +184,6 @@
                 db.ref('queue_system/waiting_list/' + no).set({ ic: ic, service: serviceName, status: "waiting", timestamp: Date.now() });
                 
                 document.getElementById('qrcode').innerHTML = "";
-                // Pautan QR yang telah dibetulkan
                 const finalLink = `https://fadhilmarzuki.github.io/Sistem-Panggilan-Pesakit/pesakitfinal.html?no=${no}`; 
                 new QRCode(document.getElementById("qrcode"), { text: finalLink, width: 140, height: 140 });
                 
@@ -181,8 +194,43 @@
         });
     }
 
+    function semakIC() {
+        const icValue = document.getElementById('searchIC').value.trim();
+        if(!icValue) return alert("Sila masukkan No. IC untuk carian.");
+        // Pastikan hasil carian lama ditutup dulu sebelum carian baru
+        document.getElementById('searchResult').style.display = "none";
+
+        db.ref('queue_system/waiting_list').orderByChild('ic').equalTo(icValue).once('value', snap => {
+            const resultBox = document.getElementById('searchResult');
+            const infoBox = document.getElementById('searchInfo');
+            const qrBox = document.getElementById('searchQrcode');
+            
+            if(snap.exists()) {
+                let foundNo = "";
+                let foundData = null;
+                snap.forEach(child => { foundNo = child.key; foundData = child.val(); });
+
+                resultBox.style.display = "block";
+                const statusKemas = foundData.status === 'waiting' ? '<span style="color:orange">Menunggu</span>' : '<span style="color:green">Sudah Dipanggil/Selesai</span>';
+                infoBox.innerHTML = `
+                    <p style="margin:0; color:#3498db; font-weight:bold;">NOMBOR DIJUMPAI:</p>
+                    <h1 style="margin:5px 0; font-size:45px;">${foundNo}</h1>
+                    <p style="margin:0;">Unit: <b>${foundData.service}</b></p>
+                    <p style="margin:5px 0;">Status: ${statusKemas}</p>
+                    <p style="font-size:11px; color:#7f8c8d; margin-top:10px;">Imbas semula QR di bawah:</p>
+                `;
+                qrBox.innerHTML = "";
+                const finalLink = `https://fadhilmarzuki.github.io/Sistem-Panggilan-Pesakit/pesakitfinal.html?no=${foundNo}`;
+                new QRCode(qrBox, { text: finalLink, width: 120, height: 120 });
+                document.getElementById('searchIC').value = ""; // Kosongkan input selepas berjaya
+            } else {
+                alert("Tiada rekod giliran dijumpai untuk No. IC ini bagi hari ini.");
+            }
+        });
+    }
+
     function confirmReset() {
-        if(confirm("AWAS: Set semula semua nombor hari ini?")) {
+        if(confirm("AWAS: Set semula nombor?")) {
             db.ref('queue_system/waiting_list').remove();
             db.ref('queue_system/last_number').remove();
             db.ref('queue_system/current_calling').set({ number: "---", room: "Sedia", service: "-", time: Date.now() });
