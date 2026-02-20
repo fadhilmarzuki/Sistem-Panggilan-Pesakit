@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel Stesen - Kawalan Penuh</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 20px; }
+        .container { max-width: 550px; margin: auto; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-top: 0; }
+        label { display: block; margin-top: 15px; font-weight: bold; }
+        select, input, button { width: 100%; padding: 12px; margin-top: 8px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; transition: 0.3s; }
+        
+        .btn-next { background: #27ae60; color: white; border: none; font-weight: bold; cursor: pointer; height: 60px; font-size: 20px; margin-bottom: 10px; }
+        .btn-recall { background: #e67e22; color: white; border: none; font-weight: bold; cursor: pointer; height: 50px; margin-bottom: 10px; }
+        .btn-back { background: #f1f2f6; color: #7f8c8d; border: 1px solid #ddd; font-weight: bold; cursor: pointer; height: 50px; }
+        
+        .display-area { background: #2c3e50; color: white; padding: 20px; border-radius: 12px; margin-top: 20px; text-align: center; }
+        .curr-num { font-size: 60px; font-weight: 900; color: #f1c40f; }
+        .waiting-stat { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; border: 1px dashed rgba(255,255,255,0.3); }
+        .coming-active { background: #27ae60 !important; animation: pulse-green 1.5s infinite; }
+        @keyframes pulse-green { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+        #serviceLabel { padding: 5px 15px; border-radius: 20px; font-size: 14px; display: inline-block; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="liveClock" style="text-align:center; font-weight:bold; color:#7f8c8d; margin-bottom:10px;"></div>
+    <div class="card">
+        <h2>Konfigurasi Stesen</h2>
+        <label>Bilik / Stesen Anda:</label>
+        <select id="selectRoom" onchange="updateRoomLabel()"></select>
+        
+        <label>Perkhidmatan Dipantau:</label>
+        <select id="selectService" onchange="updateWaitingCount()"><option value="PELBAGAI">-- PELBAGAI --</option></select>
+    </div>
+
+    <div class="card" style="text-align: center;">
+        <div class="display-area">
+            <div class="waiting-stat">Baki Menunggu: <span id="waitingCount" style="font-weight:bold; color:#55efc4">0</span> orang</div>
+            <div id="roomLabel" style="font-size:18px; opacity:0.8;">-- Pilih Bilik Dahulu --</div>
+            <div class="curr-num" id="displayNum">---</div>
+            <div id="serviceLabel" style="background:#e74c3c;">Sedia</div>
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <button class="btn-next" onclick="callNext()">PESAKIT SETERUSNYA</button>
+            <button class="btn-recall" onclick="recallPatient()">PANGGIL SEMULA</button>
+            <button class="btn-back" onclick="undoCall()">BACK</button>
+        </div>
+    </div>
+
+    <div class="card" id="transferArea" style="display:none; border-top: 5px solid #e67e22;">
+        <label>Selesai dan Seterusnya:</label>
+        <select id="targetDest" onchange="updateTransferBtn()"></select>
+        <button id="btnTransferAction" onclick="transferPatient()" style="background:#e67e22; color:white; border:none; margin-top:15px; height:50px; font-weight:bold;">SELESAI & HANTAR</button>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+<script>
+    const firebaseConfig = { 
+        apiKey: "AIzaSyBRK634U8ER_ZFOi1SV9nu8McndUWdD-rg", 
+        databaseURL: "https://sistem-panggilan-pelanggan-default-rtdb.asia-southeast1.firebasedatabase.app" 
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    let session = { current: null, service: null };
+    let patientListener = null;
+
+    function updateClock() { document.getElementById('liveClock').innerText = new Date().toLocaleString('ms-MY', { hour:'2-digit', minute:'2-digit', second:'2-digit', weekday:'short', day:'numeric' }); }
+    setInterval(updateClock, 1000);
+
+    function updateRoomLabel() {
+        const val = document.getElementById('selectRoom').value;
+        document.getElementById('roomLabel').innerText = val ? val : "-- Pilih Bilik Dahulu --";
+    }
+
+    db.ref('queue_system/settings').on('value', snap => {
+        const s = snap.val(); if(!s) return;
+        const rS = document.getElementById('selectRoom'); 
+        const sS = document.getElementById('selectService'); 
+        const tS = document.getElementById('targetDest');
+        
+        const currentRoom = rS.value;
+        const currentServ = sS.value;
+
+        rS.innerHTML = '<option value="">-- Pilih Bilik --</option>'; 
+        sS.innerHTML = '<option value="PELBAGAI">-- PELBAGAI --</option>'; 
+        tS.innerHTML = '<option value="TAMAT">TAMAT</option>';
+
+        (s.rooms || []).forEach(r => { if(r) { rS.innerHTML += `<option value="${r}">${r}</option>`; tS.innerHTML += `<option value="${r}">${r}</option>`; } });
+        (s.services || []).forEach(sv => { if(sv.name) { sS.innerHTML += `<option value="${sv.name}">${sv.name}</option>`; if(!s.rooms.includes(sv.name)) tS.innerHTML += `<option value="${sv.name}">${sv.name}</option>`; } });
+        
+        if(currentRoom) rS.value = currentRoom;
+        if(currentServ) sS.value = currentServ;
+        updateRoomLabel();
+        updateWaitingCount();
+    });
+
+    function updateWaitingCount() {
+        const sel = document.getElementById('selectService').value;
+        db.ref('queue_system/waiting_list').orderByChild('status').equalTo('waiting').on('value', snap => {
+            let count = 0;
+            snap.forEach(c => { if(sel === "PELBAGAI" || c.val().service === sel) count++; });
+            document.getElementById('waitingCount').innerText = count;
+        });
+    }
+
+    function callNext() {
+        const sR = document.getElementById('selectRoom').value;
+        const sS = document.getElementById('selectService').value;
+        if(!sR) return alert("Sila pilih bilik anda!");
+
+        db.ref('queue_system/waiting_list').orderByChild('status').equalTo('waiting').once('value', snap => {
+            let found = false;
+            snap.forEach(child => {
+                const p = child.val(); if((sS === "PELBAGAI" || p.service === sS) && !found) {
+                    found = true; 
+                    session.current = child.key;
+                    session.service = p.service;
+                    db.ref('queue_system/waiting_list/'+child.key).update({ status: 'called', calledBy: sR, isComing: false, lastRecall: null });
+                    db.ref('queue_system/current_calling').set({ number:child.key, room:sR, service:p.service, time: Date.now() });
+                    document.getElementById('displayNum').innerText = child.key;
+                    document.getElementById('transferArea').style.display = 'block';
+                    listenForPatientStatus(child.key, p.service);
+                }
+            });
+            if(!found) alert("Tiada pesakit menunggu.");
+        });
+    }
+
+    function recallPatient() {
+        if(!session.current) return alert("Tiada pesakit aktif.");
+        const sR = document.getElementById('selectRoom').value;
+        const now = Date.now();
+        
+        db.ref('queue_system/current_calling').update({ time: now });
+        db.ref('queue_system/waiting_list/' + session.current).update({ lastRecall: now });
+    }
+
+    function listenForPatientStatus(num, originalService) {
+        if(patientListener) patientListener.off();
+        patientListener = db.ref('queue_system/waiting_list/' + num);
+        patientListener.on('value', (snap) => {
+            const data = snap.val();
+            const label = document.getElementById('serviceLabel');
+            if(data && data.isComing) {
+                label.innerText = "PESAKIT SEDANG DATANG";
+                label.classList.add('coming-active');
+            } else {
+                label.innerText = originalService;
+                label.classList.remove('coming-active');
+            }
+        });
+    }
+
+    function updateTransferBtn() {
+        const target = document.getElementById('targetDest').value;
+        document.getElementById('btnTransferAction').innerText = (target === "TAMAT") ? "SELESAI & TAMAT" : "SELESAI & HANTAR";
+    }
+
+    function transferPatient() {
+        const target = document.getElementById('targetDest').value; 
+        if(!session.current) return;
+        const updateData = (target === "TAMAT") ? { status: 'completed' } : { status:'waiting', service:target, timestamp: Date.now() };
+        db.ref('queue_system/waiting_list/'+session.current).update({ ...updateData, isComing: false, lastRecall: null })
+        .then(() => { 
+            resetUIPatientOnly();
+            alert("Selesai!"); 
+        });
+    }
+
+    function undoCall() { 
+        if(!session.current) return;
+        if(confirm("Kembalikan nombor " + session.current + " ke senarai menunggu?")) {
+            db.ref('queue_system/waiting_list/'+session.current).update({ status: 'waiting', isComing: false, lastRecall: null }); 
+            resetUIPatientOnly();
+        }
+    }
+
+    function resetUIPatientOnly() {
+        session.current = null;
+        session.service = null;
+        document.getElementById('displayNum').innerText = "---";
+        document.getElementById('serviceLabel').innerText = "Sedia";
+        document.getElementById('serviceLabel').classList.remove('coming-active');
+        document.getElementById('transferArea').style.display = 'none';
+        if(patientListener) patientListener.off();
+        updateRoomLabel();
+    }
+</script>
+</body>
+</html>

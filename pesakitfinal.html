@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Status Pesakit - Live</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 450px; }
+        .card { background: white; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; margin-bottom: 20px; width: 100%; }
+        .welcome-header { color: #1a73e8; font-size: 20px; font-weight: bold; margin-bottom: 20px; display: block; line-height: 1.3; }
+        .big-text { font-size: 65px; font-weight: 900; color: #2c3e50; margin: 10px 0; }
+        .status-box { padding: 20px; border-radius: 15px; margin-top: 20px; font-weight: bold; }
+        .waiting { background: #fff3cd; color: #856404; }
+        .called { background: #d4edda; color: #155724; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+        input { width: 100%; padding: 15px; border-radius: 12px; border: 2px solid #ddd; text-align: center; font-size: 22px; margin-bottom: 15px; }
+        .btn-primary { width: 100%; padding: 15px; background: #1a73e8; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 18px; }
+        #comingBtn { background: #e67e22; color: white; border: none; padding: 18px; border-radius: 12px; font-weight: bold; font-size: 16px; margin-top: 20px; cursor: pointer; width: 100%; }
+        #comingBtn:disabled { background: #bdc3c7; cursor: not-allowed; }
+        .staff-only { font-size: 11px; color: #7f8c8d; margin-top: 5px; font-style: italic; }
+        .info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .info-label { color: #7f8c8d; font-size: 14px; }
+        .info-val { font-weight: bold; font-size: 18px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card" id="loginView">
+        <h1 id="dispClinicName">Klinik Kesihatan</h1>
+        <p>Masukkan nombor giliran anda</p>
+        <input type="text" id="inputNum" placeholder="Contoh: A-001">
+        <button class="btn-primary" onclick="checkStatus()">MULA PANTAU</button>
+    </div>
+
+    <div class="card" id="statusView" style="display:none;">
+        <div class="welcome-header" id="welcomeMsg">Selamat Datang Ke...</div>
+        <div style="color: #7f8c8d; font-size: 14px;">NOMBOR ANDA:</div>
+        <div id="myNumDisplay" class="big-text">---</div>
+        
+        <div id="statusIndicator" class="status-box waiting">
+            <div id="statusLabel">Menunggu...</div>
+            <div id="roomLabel" style="font-weight:normal; font-size:14px; margin-top:5px;">Sila tunggu panggilan doktor</div>
+        </div>
+
+        <div id="queueDetails" style="margin-top:25px; border-top:1px dashed #ddd; padding-top:15px;">
+            <div class="info-row">
+                <span class="info-label">Nombor sekarang:</span>
+                <span id="currentNumVal" class="info-val" style="color:#e74c3c">---</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Baki menunggu:</span>
+                <span id="remainingCount" class="info-val" style="color:#1a73e8">0 orang</span>
+            </div>
+        </div>
+
+        <button id="comingBtn" style="display:none;" onclick="notifyDoctor()">SAYA SEDANG MENUJU KE SANA</button>
+        <div id="customMsg" style="margin-top:20px; font-style:italic; color:#7f8c8d; font-size: 13px; line-height: 1.4;">
+            Harap bersabar. Anda akan dilayan sebentar lagi. Terima kasih.
+        </div>
+        
+        <div style="margin-top: 30px;">
+            <button style="background:transparent; color:#7f8c8d; border:none; text-decoration:underline; cursor:pointer;" onclick="location.reload()">Tukar Nombor</button>
+            <div class="staff-only">(Hanya untuk kegunaan staf)</div>
+        </div>
+    </div>
+</div>
+
+<audio id="alertSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+<script>
+    const firebaseConfig = { 
+        apiKey: "AIzaSyBRK634U8ER_ZFOi1SV9nu8McndUWdD-rg", 
+        databaseURL: "https://sistem-panggilan-pelanggan-default-rtdb.asia-southeast1.firebasedatabase.app" 
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    let currentLocalLastRecall = null;
+    let initialLoad = true;
+
+    db.ref('queue_system/settings').on('value', snap => {
+        const s = snap.val();
+        if(s) { 
+            document.getElementById('dispClinicName').innerText = s.clinic_name; 
+            document.getElementById('welcomeMsg').innerText = "Selamat Datang Ke " + s.clinic_name; 
+        }
+    });
+
+    // Auto-login melalui QR Code
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const ticketNo = urlParams.get('no');
+        if(ticketNo) {
+            document.getElementById('inputNum').value = ticketNo.toUpperCase();
+            checkStatus();
+        }
+    };
+
+    function checkStatus() {
+        const num = document.getElementById('inputNum').value.toUpperCase().trim();
+        if(!num) return;
+        db.ref('queue_system/waiting_list/' + num).once('value', (snap) => {
+            if (!snap.exists()) { alert("Nombor giliran tidak sah!"); return; }
+            document.getElementById('loginView').style.display = 'none';
+            document.getElementById('statusView').style.display = 'block';
+            document.getElementById('myNumDisplay').innerText = num;
+            startMonitoring(num);
+        });
+    }
+
+    function startMonitoring(num) {
+        db.ref('queue_system/waiting_list/' + num).on('value', (snap) => {
+            const data = snap.val();
+            if(!data) return;
+
+            if(data.status === "called") {
+                document.getElementById('queueDetails').style.display = 'none';
+                const btn = document.getElementById('comingBtn');
+                btn.style.display = 'block';
+                
+                // PEMBETULAN: Aktifkan semula butang jika data isComing adalah false
+                if(!data.isComing) {
+                    btn.innerText = "SAYA SEDANG MENUJU KE SANA";
+                    btn.disabled = false;
+                    btn.style.background = "#e67e22";
+                } else {
+                    btn.innerText = "MAKLUMAN DIHANTAR";
+                    btn.disabled = true;
+                    btn.style.background = "#bdc3c7";
+                }
+
+                document.getElementById('statusIndicator').className = "status-box called";
+                document.getElementById('statusLabel').innerText = "GILIRAN ANDA!";
+                
+                if(data.lastRecall && (initialLoad || data.lastRecall !== currentLocalLastRecall)) {
+                    currentLocalLastRecall = data.lastRecall; initialLoad = false; playSound();
+                } else if(initialLoad) {
+                    initialLoad = false; playSound();
+                }
+
+                db.ref('queue_system/current_calling').once('value', c => {
+                    const cd = c.val();
+                    if(cd && cd.number === num) document.getElementById('roomLabel').innerText = "Lokasi: " + cd.room;
+                });
+            } else {
+                initialLoad = true;
+                currentLocalLastRecall = null;
+                document.getElementById('queueDetails').style.display = 'block';
+                document.getElementById('comingBtn').style.display = 'none';
+                document.getElementById('statusIndicator').className = "status-box waiting";
+                document.getElementById('statusLabel').innerText = "Menunggu...";
+                document.getElementById('roomLabel').innerText = "Sila tunggu panggilan doktor";
+
+                db.ref('queue_system/current_calling').on('value', c => {
+                    const cd = c.val();
+                    if(cd && cd.service === data.service) document.getElementById('currentNumVal').innerText = cd.number;
+                });
+
+                db.ref('queue_system/waiting_list').orderByChild('status').equalTo('waiting').on('value', list => {
+                    let count = 0;
+                    list.forEach(child => { if(child.val().service === data.service && child.val().timestamp < data.timestamp) count++; });
+                    document.getElementById('remainingCount').innerText = count + " orang";
+                });
+            }
+        });
+    }
+
+    function playSound() {
+        const audio = document.getElementById('alertSound');
+        audio.currentTime = 0; audio.play().catch(e => {});
+        if(window.navigator.vibrate) window.navigator.vibrate([200, 100, 200]);
+    }
+
+    function notifyDoctor() {
+        const num = document.getElementById('myNumDisplay').innerText;
+        db.ref('queue_system/waiting_list/' + num).update({ isComing: true });
+    }
+</script>
+</body>
+</html>
