@@ -13,18 +13,19 @@
         label { display: block; margin-top: 15px; font-weight: bold; color: #34495e; }
         input, button, select, textarea { width: 100%; padding: 12px; margin-top: 5px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
         .btn-daftar { background: #27ae60; color: white; border: none; font-weight: bold; cursor: pointer; height: 55px; font-size: 18px; }
+        
         .tab-bar { display: flex; gap: 5px; margin-bottom: 15px; }
         .tab-btn { flex: 1; padding: 15px; cursor: pointer; background: #d1d8e0; border: none; font-weight: bold; border-radius: 10px 10px 0 0; }
         .active-tab { background: #fff; color: #1a73e8; border-bottom: 3px solid #1a73e8; }
         
         /* Statistik Unit */
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 15px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 15px; }
         .stat-item { background: rgba(255,255,255,0.2); padding: 10px; border-radius: 10px; text-align: center; border: 1px solid rgba(255,255,255,0.3); }
         .stat-val { font-size: 24px; font-weight: bold; }
         .stat-label { font-size: 11px; text-transform: uppercase; opacity: 0.9; }
 
-        /* QR Code Pop-up */
-        #qrContainer { display: flex; flex-direction: column; align-items: center; margin-top: 15px; padding: 15px; background: #fff; border-radius: 10px; }
+        /* QR Code Container */
+        #qrContainer { display: flex; flex-direction: column; align-items: center; margin-top: 15px; padding: 15px; background: #fff; border-radius: 10px; border: 1px solid #eee; }
     </style>
 </head>
 <body>
@@ -59,7 +60,7 @@
                 <div id="qrcode"></div>
                 <p style="font-size:12px; color:#2c3e50; margin-top:10px;">Imbas QR untuk pantau giliran di telefon</p>
             </div>
-            <button onclick="this.parentElement.style.display='none'" style="background:#95a5a6; color:white; border:none; margin-top:10px; padding:8px; border-radius:5px; width:auto;">Tutup</button>
+            <button onclick="this.parentElement.style.display='none'" style="background:#95a5a6; color:white; border:none; margin-top:10px; padding:8px; border-radius:5px; width:auto; cursor:pointer;">Tutup</button>
         </div>
     </div>
 
@@ -67,32 +68,38 @@
         <h2>Tetapan & Daily Reset</h2>
         <label>Nama Klinik (Boleh Enter untuk baris baru):</label>
         <textarea id="confClinicName" rows="2"></textarea>
-        <label>Mesej Pangkalan:</label>
+        <label>Mesej Mesej Marquee (Bawah):</label>
         <input type="text" id="confMessage">
-        <label>Pautan Video YouTube (Link penuh):</label>
+        <label>Pautan Video YouTube:</label>
         <input type="text" id="confYoutube">
         
+        <label>Mainkan Suara Video di TV:</label>
+        <select id="confSound">
+            <option value="1">MUTE (Tiada Suara)</option>
+            <option value="0">ON (Ada Suara)</option>
+        </select>
+
         <div style="display:grid; grid-template-columns: 1fr 2fr; gap:20px; margin-top:20px;">
             <div><h3>Slot Bilik</h3><div id="roomInputs"></div></div>
             <div><h3>Unit & Abjad</h3><div id="servInputs"></div></div>
         </div>
         <button onclick="saveSettings()" style="background:#34495e; color:white; padding:15px; border:none; border-radius:8px; cursor:pointer; margin-top:20px; font-weight:bold;">SIMPAN TETAPAN</button>
         <hr style="margin:40px 0;">
-        <button onclick="confirmReset()" style="background:#e74c3c; color:white; border:none; padding:15px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%;">SET SEMULA NOMBOR (DAILY RESET)</button>
+        <button onclick="confirmReset()" style="background:#e74c3c; color:white; border:none; padding:15px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%;">DAILY RESET (SET SEMULA NOMBOR)</button>
     </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyBRK634U8ER_ZFOi1SV9nu8McndUWdD-rg",
-        databaseURL: "https://sistem-panggilan-pelanggan-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "sistem-panggilan-pelanggan",
+    const firebaseConfig = { 
+        apiKey: "AIzaSyBRK634U8ER_ZFOi1SV9nu8McndUWdD-rg", 
+        databaseURL: "https://sistem-panggilan-pelanggan-default-rtdb.asia-southeast1.firebasedatabase.app" 
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    // Jana input bilik dan unit secara automatik
     for(let i=1; i<=10; i++) {
         document.getElementById('roomInputs').innerHTML += `<input type="text" id="roomName${i}" placeholder="Bilik ${i}">`;
         document.getElementById('servInputs').innerHTML += `<div style="display:flex; gap:5px; margin-bottom:5px;"><input type="text" id="servName${i}" placeholder="Unit ${i}"><input type="text" id="servAbjad${i}" placeholder="A" maxlength="1" style="width:50px; text-align:center;"></div>`;
@@ -101,22 +108,15 @@
     function updateClock() { document.getElementById('liveClock').innerText = new Date().toLocaleString('ms-MY'); }
     setInterval(updateClock, 1000);
 
-    // Statistik Mengikut Unit
+    // Statistik Unit secara Real-time
     db.ref('queue_system/waiting_list').on('value', snap => {
         const data = snap.val() || {};
-        const total = snap.numChildren();
-        document.getElementById('totalToday').innerText = total;
-
+        document.getElementById('totalToday').innerText = snap.numChildren();
         const counts = {};
-        Object.values(data).forEach(p => {
-            counts[p.service] = (counts[p.service] || 0) + 1;
-        });
-
+        Object.values(data).forEach(p => { if(p.status === 'waiting') counts[p.service] = (counts[p.service] || 0) + 1; });
         const statsGrid = document.getElementById('serviceStats');
         statsGrid.innerHTML = "";
-        Object.keys(counts).forEach(srv => {
-            statsGrid.innerHTML += `<div class="stat-item"><div class="stat-val">${counts[srv]}</div><div class="stat-label">${srv}</div></div>`;
-        });
+        Object.keys(counts).forEach(srv => { statsGrid.innerHTML += `<div class="stat-item"><div class="stat-val">${counts[srv]}</div><div class="stat-label">${srv}</div></div>`; });
     });
 
     let servicesData = [];
@@ -126,6 +126,8 @@
             document.getElementById('confClinicName').value = s.clinic_name || "";
             document.getElementById('confMessage').value = s.message || "";
             document.getElementById('confYoutube').value = s.youtube_link || "";
+            if(s.sound_mute !== undefined) document.getElementById('confSound').value = s.sound_mute; // Muat tetapan suara
+            
             if(s.rooms) s.rooms.forEach((r, i) => { if(document.getElementById(`roomName${i+1}`)) document.getElementById(`roomName${i+1}`).value = r; });
             servicesData = s.services || [];
             const regDropdown = document.getElementById('regService');
@@ -146,27 +148,31 @@
             roomsArr.push(document.getElementById(`roomName${i}`).value);
             servsArr.push({ name: document.getElementById(`servName${i}`).value, abjad: document.getElementById(`servAbjad${i}`).value.toUpperCase() || "A" });
         }
-        db.ref('queue_system/settings').set({ clinic_name: document.getElementById('confClinicName').value, message: document.getElementById('confMessage').value, youtube_link: document.getElementById('confYoutube').value, rooms: roomsArr, services: servsArr }).then(() => alert("Disimpan!"));
+        db.ref('queue_system/settings').set({ 
+            clinic_name: document.getElementById('confClinicName').value, 
+            message: document.getElementById('confMessage').value, 
+            youtube_link: document.getElementById('confYoutube').value,
+            sound_mute: document.getElementById('confSound').value, // Simpan tetapan suara
+            rooms: roomsArr, 
+            services: servsArr 
+        }).then(() => alert("Tetapan Berjaya Disimpan!"));
     }
 
     function daftarPesakit() {
         const ic = document.getElementById('patientIC').value;
         const serviceName = document.getElementById('regService').value;
         if(!ic || !serviceName) return alert("Sila isi IC dan Pilih Unit!");
-        
         const prefix = (servicesData.find(s => s.name === serviceName) || {abjad:"A"}).abjad;
+        
         db.ref('queue_system/last_number/' + prefix).transaction(c => (c || 0) + 1, (err, comm, snap) => {
             if(comm) {
                 const no = prefix + "-" + snap.val().toString().padStart(3, '0');
                 db.ref('queue_system/waiting_list/' + no).set({ ic: ic, service: serviceName, status: "waiting", timestamp: Date.now() });
                 
-                // Jana QR Code
                 document.getElementById('qrcode').innerHTML = "";
-                // Gantikan 'pesakit6.html' dengan URL sebenar fail anda nanti
-                const currentURL = window.location.href.replace('daftar5.html', 'pesakit6.html');
-                const finalLink = "https://fadhilmarzuki.github.io/Sistem-Panggilan_Pesakit/pesakitfinal.html?no=" + no;
-                
-                new QRCode(document.getElementById("qrcode"), { text: finalLink, width: 150, height: 150 });
+                // Pautan QR yang telah dibetulkan
+                const finalLink = `https://fadhilmarzuki.github.io/Sistem-Panggilan-Pesakit/pesakitfinal.html?no=${no}`; 
+                new QRCode(document.getElementById("qrcode"), { text: finalLink, width: 140, height: 140 });
                 
                 document.getElementById('regStatus').style.display = "block";
                 document.getElementById('statusText').innerHTML = `Berjaya didaftarkan!<br><b style="font-size:35px; color:#27ae60;">${no}</b><br>${serviceName}`;
@@ -176,7 +182,7 @@
     }
 
     function confirmReset() {
-        if(confirm("SET SEMULA SEMUA NOMBOR HARI INI?")) {
+        if(confirm("AWAS: Set semula semua nombor hari ini?")) {
             db.ref('queue_system/waiting_list').remove();
             db.ref('queue_system/last_number').remove();
             db.ref('queue_system/current_calling').set({ number: "---", room: "Sedia", service: "-", time: Date.now() });
@@ -192,5 +198,4 @@
     }
 </script>
 </body>
-
 </html>
