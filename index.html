@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Sistem KK BAS</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .hub-container { width: 100%; max-width: 900px; text-align: center; }
+        h1 { color: #2c3e50; margin-bottom: 5px; font-size: 2.5rem; }
+        .subtitle { color: #7f8c8d; margin-bottom: 40px; }
+        
+        .grid-menu { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        
+        /* Gaya Butang */
+        .btn-card { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 20px; 
+            text-decoration: none; 
+            color: #2c3e50; 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05); 
+            transition: all 0.3s ease; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            border: 2px solid transparent;
+        }
+        
+        .btn-card:hover { transform: translateY(-10px); border-color: #1a73e8; box-shadow: 0 15px 30px rgba(26,115,232,0.15); }
+        .icon { font-size: 50px; margin-bottom: 15px; }
+        .label { font-size: 18px; font-weight: bold; color: #1a73e8; }
+        .desc { font-size: 13px; color: #7f8c8d; margin-top: 8px; line-height: 1.4; }
+
+        /* Kod Warna Berdasarkan Fungsi */
+        .daftar { border-top: 6px solid #27ae60; }
+        .doktor { border-top: 6px solid #e67e22; }
+        .tv { border-top: 6px solid #1a73e8; }
+        .pesakit { border-top: 6px solid #9b59b6; }
+    </style>
+</head>
+<body>
+
+<div class="hub-container">
+    <h1>SISTEM PANGGILAN PINTAR</h1>
+    <p class="subtitle">Klinik Kesihatan Bandar Alor Setar (Pilot Project 2026)</p>
+
+    <div class="grid-menu">
+        <a href="daftarfinal.html" class="btn-card daftar">
+            <div class="icon">📝</div>
+            <div class="label">KAUNTER DAFTAR</div>
+            <div class="desc">Daftar pesakit & pantau statistik harian</div>
+        </a>
+
+        <a href="doktorfinal.html" class="btn-card doktor">
+            <div class="icon">👨‍⚕️</div>
+            <div class="label">PANEL DOKTOR</div>
+            <div class="desc">Panggil pesakit & urus bilik rawatan</div>
+        </a>
+
+        <a href="tvfinal.html" class="btn-card tv">
+            <div class="icon">📺</div>
+            <div class="label">PAPARAN SMART TV</div>
+            <div class="desc">Hebahan panggilan & paparan video YouTube</div>
+        </a>
+
+        <a href="pesakitfinal.html" class="btn-card pesakit">
+            <div class="icon">📱</div>
+            <div class="label">STATUS PESAKIT</div>
+            <div class="desc">Halaman manual untuk pesakit pantau giliran</div>
+        </a>
+    </div>
+
+    <div style="margin-top: 50px; color: #bdc3c7; font-size: 12px;">
+        Hak Cipta Terpelihara &copy; 2026 KK Bandar Alor Setar
+    </div>
+</div>
+
+</body>
+</html>
