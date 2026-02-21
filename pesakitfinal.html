@@ -79,7 +79,7 @@
             <div class="info-row"><span class="info-label">Baki Menunggu:</span><span id="remainingCount" class="info-val" style="color:#1a73e8">0</span></div>
         </div>
 
-        <button id="comingBtn" style="display:none;" onclick="notifyDoctor()">MAKLUMKAN ANDA SEDANG MENUJU KE SANA</button>
+        <button id="comingBtn" style="display:none;" onclick="notifyDoctor()">SAYA MENUJU KE SANA</button>
         <div class="instruction-note" id="warningNote">⚠️ JANGAN TUTUP LAMAN INI</div>
         <button style="background:transparent; color:#7f8c8d; border:none; text-decoration:underline; margin-top:30px;" onclick="location.reload()">Tukar Nombor / IC</button>
     </div>
@@ -92,8 +92,10 @@
     const firebaseConfig = { apiKey: "AIzaSyBRK634U8ER_ZFOi1SV9nu8McndUWdD-rg", databaseURL: "https://sistem-panggilan-pelanggan-default-rtdb.asia-southeast1.firebasedatabase.app" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    
+    // PEMUBAHUBAH PENGESAN
     let currentLocalLastRecall = null;
-    let initialLoad = true;
+    let lastKnownStatus = null; 
 
     db.ref('queue_system/settings').on('value', snap => {
         const s = snap.val(); if(s) document.getElementById('dispClinicName').innerText = s.clinic_name;
@@ -125,8 +127,11 @@
     function checkStatus() {
         const num = document.getElementById('inputNum').value.toUpperCase().trim();
         if(!num) return;
+        
+        // PENTING: Lepaskan sekatan audio pelayar
         const audio = document.getElementById('alertSound');
         audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(e => {});
+        
         db.ref('queue_system/waiting_list/' + num).once('value', (snap) => {
             if (!snap.exists()) { alert("Nombor tidak sah!"); return; }
             document.getElementById('loginView').style.display = 'none';
@@ -147,23 +152,24 @@
             const warningNote = document.getElementById('warningNote');
             const btn = document.getElementById('comingBtn');
 
+            // --- 1. SESI SELESAI ---
             if(data.status === "completed") {
                 indicator.className = "status-box completed-box";
                 label.innerText = "SESI SELESAI";
                 roomLabel.innerText = "Terima kasih atas kunjungan anda.";
                 ratingSec.style.display = "block";
                 queueDetails.style.display = "none";
-                warningNote.style.display = "none";
+                warningNote.style.display = "none"; // Sembunyikan amaran
                 btn.style.display = "none";
                 setupRating(num, data.service, data.calledBy);
             } 
+            // --- 2. GILIRAN ANDA (BUNYI DI SINI) ---
             else if(data.status === "called") {
                 ratingSec.style.display = "none";
                 queueDetails.style.display = "none";
                 warningNote.style.display = "block";
                 btn.style.display = "block";
                 
-                // LOGIK PERUBAHAN BUTANG BERDASARKAN DATABASE
                 if(data.isComing === true) {
                     btn.innerText = "DOKTOR TELAH DIMAKLUMKAN";
                     btn.disabled = true;
@@ -175,15 +181,23 @@
                 indicator.className = "status-box called";
                 label.innerText = "GILIRAN ANDA!";
                 
-                if(data.lastRecall && (initialLoad || data.lastRecall !== currentLocalLastRecall)) {
-                    currentLocalLastRecall = data.lastRecall; initialLoad = false; playSound();
-                } else if(initialLoad) { initialLoad = false; playSound(); }
+                // LOGIK BUNYI DIPERBAIKI
+                // Berbunyi jika: 
+                // a) Status baru berubah dari 'waiting' ke 'called' (Panggilan Pertama)
+                // b) Panggil Semula (lastRecall berubah)
+                if (lastKnownStatus === "waiting" || (data.lastRecall && data.lastRecall !== currentLocalLastRecall)) {
+                    playSound();
+                    currentLocalLastRecall = data.lastRecall;
+                }
 
                 db.ref('queue_system/current_calling').once('value', c => {
                     const cd = c.val(); 
-                    if(cd && cd.number === num) roomLabel.innerText = "Sila ke " + cd.room;
+                    if(cd && cd.number === num) {
+                        roomLabel.innerText = "Sila ke " + cd.room; // Teks dinamik bilik
+                    }
                 });
             } 
+            // --- 3. MENUNGGU ---
             else {
                 ratingSec.style.display = "none";
                 queueDetails.style.display = "block";
@@ -191,7 +205,7 @@
                 btn.style.display = "none";
                 indicator.className = "status-box waiting";
                 label.innerText = "Menunggu...";
-                roomLabel.innerText = "Sila tunggu nombor anda dipanggil...";
+                roomLabel.innerText = "Sila tunggu nombor anda dipanggil..."; // Teks kemaskini
                 
                 db.ref('queue_system/current_calling').on('value', c => {
                     const cd = c.val(); 
@@ -202,6 +216,9 @@
                     document.getElementById('remainingCount').innerText = count;
                 });
             }
+            
+            // Simpan status terakhir untuk rujukan kitaran seterusnya
+            lastKnownStatus = data.status;
         });
     }
 
@@ -219,13 +236,17 @@
         });
     }
 
-    function playSound() { const audio = document.getElementById('alertSound'); audio.currentTime = 0; audio.play().catch(e => {}); if(window.navigator.vibrate) window.navigator.vibrate([300, 100, 300]); }
-    
-    // FUNGSI NOTIFY DOKTOR DENGAN MAKLUM BALAS SEGERA
+    function playSound() { 
+        const audio = document.getElementById('alertSound'); 
+        audio.currentTime = 0; 
+        audio.play().catch(e => console.log("Audio ditapis pelayar:", e)); 
+        if(window.navigator.vibrate) window.navigator.vibrate([300, 100, 300]); 
+    }
+
     function notifyDoctor() { 
         const btn = document.getElementById('comingBtn');
         btn.innerText = "SEDANG DIHANTAR...";
-        btn.disabled = true; // Elakkan klik berganda
+        btn.disabled = true;
         const num = document.getElementById('myNumDisplay').innerText; 
         db.ref('queue_system/waiting_list/' + num).update({ isComing: true }); 
     }
