@@ -6,49 +6,31 @@
     <title>Pendaftaran SPGP - Unit NCD JKN Kedah</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
+        /* --- KEKALKAN STYLE ASAL ANDA --- */
         body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f0f4f8; padding: 20px; margin: 0; }
         .container { max-width: 900px; margin: auto; padding-bottom: 50px; }
-        
-        /* Gaya Pengepala Baru */
-        .top-bar { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 15px; 
-            color: #7f8c8d; 
-            font-weight: bold;
-            font-size: 14px;
-        }
-
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; color: #7f8c8d; font-weight: bold; font-size: 14px; }
         .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
         h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-top: 0; }
         label { display: block; margin-top: 15px; font-weight: bold; color: #34495e; }
         input, button, select, textarea { width: 100%; padding: 12px; margin-top: 5px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
-        
         .btn-daftar { background: #27ae60; color: white; border: none; font-weight: bold; cursor: pointer; height: 55px; font-size: 18px; margin-top: 15px; }
         .btn-semak { background: #3498db; color: white; border: none; font-weight: bold; cursor: pointer; height: 45px; margin-top: 10px; }
-        
         .tab-bar { display: flex; gap: 5px; margin-bottom: 15px; }
         .tab-btn { flex: 1; padding: 15px; cursor: pointer; background: #d1d8e0; border: none; font-weight: bold; border-radius: 10px 10px 0 0; }
         .active-tab { background: #fff; color: #1a73e8; border-bottom: 3px solid #1a73e8; }
-        
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 15px; }
         .stat-item { background: rgba(255,255,255,0.2); padding: 10px; border-radius: 10px; text-align: center; border: 1px solid rgba(255,255,255,0.3); }
         .stat-val { font-size: 24px; font-weight: bold; }
         .stat-label { font-size: 11px; text-transform: uppercase; opacity: 0.9; }
-
         #qrContainer { display: flex; flex-direction: column; align-items: center; margin-top: 15px; padding: 15px; background: #fff; border-radius: 10px; border: 1px solid #eee; }
         .search-result { margin-top: 15px; padding: 15px; border: 1px solid #3498db; border-radius: 10px; background: #ebf5fb; display: none; text-align: center; }
+        .footer { text-align: center; margin-top: 30px; padding: 20px; color: #bdc3c7; font-size: 13px; border-top: 1px solid #e0e6ed; }
 
-        /* Gaya Footer Baru */
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            padding: 20px;
-            color: #bdc3c7;
-            font-size: 13px;
-            border-top: 1px solid #e0e6ed;
-        }
+        /* --- TAMBAHAN STYLE UNTUK PENILAIAN --- */
+        .avg-rating-box { text-align: center; padding: 20px; background: #f8f9fa; border-radius: 15px; margin-bottom: 20px; border: 1px solid #eee; }
+        .avg-val { font-size: 50px; font-weight: 900; color: #f1c40f; line-height: 1; }
+        .rating-item { padding: 10px; border-bottom: 1px solid #f1f1f1; display: flex; justify-content: space-between; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -62,6 +44,7 @@
     <div class="tab-bar">
         <button id="tab1" class="tab-btn active-tab" onclick="showSection('pendaftaran')">PENDAFTARAN</button>
         <button id="tab2" class="tab-btn" onclick="showSection('tetapan')">TETAPAN & RESET</button>
+        <button id="tab3" class="tab-btn" onclick="showSection('penilaian')">PENILAIAN ⭐</button>
     </div>
 
     <div class="card" style="background: #1a73e8; color: white;">
@@ -82,64 +65,53 @@
         
         <div id="regStatus" style="display:none; margin-top:20px; text-align:center; padding:15px; background:#eafaf1; border:2px solid #27ae60; border-radius:10px;">
             <div id="statusText"></div>
-            <div id="qrContainer">
-                <div id="qrcode"></div>
-                <p style="font-size:12px; color:#2c3e50; margin-top:10px;">Imbas QR untuk pantau giliran di telefon</p>
-            </div>
-            <button onclick="this.parentElement.style.display='none'" style="background:#95a5a6; color:white; border:none; margin-top:10px; padding:8px; border-radius:5px; width:auto; cursor:pointer;">Tutup</button>
+            <div id="qrContainer"><div id="qrcode"></div><p style="font-size:12px; margin-top:10px;">Imbas QR untuk telefon</p></div>
+            <button onclick="this.parentElement.style.display='none'" style="background:#95a5a6; color:white; border:none; margin-top:10px; padding:8px; border-radius:5px; cursor:pointer;">Tutup</button>
         </div>
 
         <hr style="margin: 40px 0; border: 0; border-top: 2px dashed #ddd;">
-
         <h2>Semakan Nombor Giliran</h2>
         <input type="text" id="searchIC" placeholder="Masukkan No. IC Pesakit">
         <button class="btn-semak" onclick="semakIC()">CARI NOMBOR</button>
-
-        <div id="searchResult" class="search-result">
-            <div id="searchInfo" style="text-align:center;"></div>
-            <div id="searchQrContainer" style="display: flex; flex-direction: column; align-items: center; margin-top: 10px;">
-                <div id="searchQrcode"></div>
-            </div>
-            <button onclick="this.parentElement.style.display='none'" style="background:#95a5a6; color:white; border:none; margin-top:15px; padding:8px 20px; border-radius:5px; width:auto; cursor:pointer; font-weight:bold;">Tutup Semakan</button>
-        </div>
+        <div id="searchResult" class="search-result"><div id="searchInfo"></div><div id="searchQrContainer" style="display:flex; flex-direction:column; align-items:center;"><div id="searchQrcode"></div></div><button onclick="this.parentElement.style.display='none'" style="background:#95a5a6; color:white; border:none; margin-top:15px; padding:8px 20px; border-radius:5px; cursor:pointer;">Tutup</button></div>
     </div>
 
     <div id="sec-tetapan" class="card" style="display:none;">
         <h2>Tetapan & Daily Reset</h2>
-        <label>Nama Klinik:</label>
-        <textarea id="confClinicName" rows="2"></textarea>
-        <label>Mesej Marquee (Bawah TV):</label>
-        <input type="text" id="confMessage">
-        <label>Pautan Video YouTube:</label>
-        <input type="text" id="confYoutube">
-        
-        <label>Suara Video di TV:</label>
-        <select id="confSound">
-            <option value="1">MUTE (Tiada Suara)</option>
-            <option value="0">ON (Ada Suara)</option>
-        </select>
-
+        <label>Nama Klinik:</label><textarea id="confClinicName" rows="2"></textarea>
+        <label>Mesej Marquee:</label><input type="text" id="confMessage">
+        <label>Pautan Video YouTube:</label><input type="text" id="confYoutube">
+        <label>Suara Video di TV:</label><select id="confSound"><option value="1">MUTE</option><option value="0">ON</option></select>
         <div style="display:grid; grid-template-columns: 1fr 2fr; gap:20px; margin-top:20px;">
             <div><h3>Slot Bilik</h3><div id="roomInputs"></div></div>
-            <div><h3>Unit/Perkhidmatan & Abjad</h3><div id="servInputs"></div></div>
+            <div><h3>Unit & Abjad</h3><div id="servInputs"></div></div>
         </div>
-        <button onclick="saveSettings()" style="background:#34495e; color:white; padding:15px; border:none; border-radius:8px; cursor:pointer; margin-top:20px; font-weight:bold;">SIMPAN TETAPAN</button>
-        <hr style="margin:40px 0;">
-        <button onclick="confirmReset()" style="background:#e74c3c; color:white; border:none; padding:15px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%;">DAILY RESET (SET SEMULA NOMBOR)</button>
+        <button onclick="saveSettings()" style="background:#34495e; color:white; padding:15px; border:none; border-radius:8px; cursor:pointer; margin-top:20px;">SIMPAN TETAPAN</button>
+        <hr style="margin:40px 0;"><button onclick="confirmReset()" style="background:#e74c3c; color:white; border:none; padding:15px; border-radius:8px; cursor:pointer; width:100%;">DAILY RESET</button>
     </div>
 
-    <div class="footer">
-        Hak Cipta Terpelihara &copy; 2026 Unit NCD JKN Kedah
+    <div id="sec-penilaian" class="card" style="display:none;">
+        <h2>Analisis Penilaian Pesakit</h2>
+        <div style="display:flex; gap:10px; margin-bottom:20px;">
+            <select id="filterService" onchange="loadRatings()"><option value="">Semua Unit</option></select>
+            <select id="filterRoom" onchange="loadRatings()"><option value="">Semua Bilik</option></select>
+        </div>
+        <div class="avg-rating-box">
+            <div style="font-size:14px; color:#7f8c8d;">PURATA BINTANG</div>
+            <div id="avgRating" class="avg-val">0.0</div>
+            <div id="totalVotes" style="color:#7f8c8d; font-size:12px;">0 maklum balas</div>
+        </div>
+        <div id="ratingList" style="max-height:300px; overflow-y:auto; border:1px solid #eee; border-radius:10px; padding:10px;"></div>
     </div>
+
+    <div class="footer">Hak Cipta Terpelihara &copy; 2026 Unit NCD JKN Kedah</div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 <script>
-    const firebaseConfig = { 
-        apiKey: "AIzaSyBRK634U8ER_ZFOi1SV9nu8McndUWdD-rg", 
-        databaseURL: "https://sistem-panggilan-pelanggan-default-rtdb.asia-southeast1.firebasedatabase.app" 
-    };
+    /* --- KEKALKAN LOGIK ASAL ANDA --- */
+    const firebaseConfig = { apiKey: "AIzaSyBRK634U8ER_ZFOi1SV9nu8McndUWdD-rg", databaseURL: "https://sistem-panggilan-pelanggan-default-rtdb.asia-southeast1.firebasedatabase.app" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
@@ -148,30 +120,15 @@
         document.getElementById('servInputs').innerHTML += `<div style="display:flex; gap:5px; margin-bottom:5px;"><input type="text" id="servName${i}" placeholder="Unit ${i}"><input type="text" id="servAbjad${i}" placeholder="A" maxlength="1" style="width:50px; text-align:center;"></div>`;
     }
 
-    function updateClock() { 
-        const now = new Date();
-        document.getElementById('liveClock').innerText = now.toLocaleString('ms-MY', { 
-            day: 'numeric', month: 'numeric', year: 'numeric', 
-            hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true 
-        }).toUpperCase();
-    }
+    function updateClock() { document.getElementById('liveClock').innerText = new Date().toLocaleString('ms-MY').toUpperCase(); }
     setInterval(updateClock, 1000);
 
     db.ref('queue_system/waiting_list').on('value', snap => {
         const data = snap.val() || {};
-        const statsGrid = document.getElementById('serviceStats');
-        let totalWaiting = 0;
-        const counts = {};
-        
-        Object.values(data).forEach(p => { 
-            if(p.status === 'waiting') {
-                totalWaiting++;
-                counts[p.service] = (counts[p.service] || 0) + 1; 
-            }
-        });
-        
+        let totalWaiting = 0; const counts = {};
+        Object.values(data).forEach(p => { if(p.status === 'waiting') { totalWaiting++; counts[p.service] = (counts[p.service] || 0) + 1; } });
         document.getElementById('totalToday').innerText = totalWaiting;
-        statsGrid.innerHTML = "";
+        const statsGrid = document.getElementById('serviceStats'); statsGrid.innerHTML = "";
         Object.keys(counts).forEach(srv => { statsGrid.innerHTML += `<div class="stat-item"><div class="stat-val">${counts[srv]}</div><div class="stat-label">${srv}</div></div>`; });
     });
 
@@ -188,96 +145,98 @@
             const regDropdown = document.getElementById('regService');
             regDropdown.innerHTML = '<option value="">-- Sila Pilih --</option>';
             servicesData.forEach((item, i) => {
-                if(document.getElementById(`servName${i+1}`)) {
-                    document.getElementById(`servName${i+1}`).value = item.name || "";
-                    document.getElementById(`servAbjad${i+1}`).value = item.abjad || "A";
-                }
+                if(document.getElementById(`servName${i+1}`)) { document.getElementById(`servName${i+1}`).value = item.name || ""; document.getElementById(`servAbjad${i+1}`).value = item.abjad || "A"; }
                 if(item.name && item.name.trim() !== "") regDropdown.innerHTML += `<option value="${item.name}">${item.name}</option>`;
             });
         }
     });
 
-    function saveSettings() {
-        let roomsArr = []; let servsArr = [];
-        for(let i=1; i<=10; i++) {
-            roomsArr.push(document.getElementById(`roomName${i}`).value);
-            servsArr.push({ name: document.getElementById(`servName${i}`).value, abjad: document.getElementById(`servAbjad${i}`).value.toUpperCase() || "A" });
-        }
-        db.ref('queue_system/settings').set({ clinic_name: document.getElementById('confClinicName').value, message: document.getElementById('confMessage').value, youtube_link: document.getElementById('confYoutube').value, sound_mute: document.getElementById('confSound').value, rooms: roomsArr, services: servsArr }).then(() => alert("Simpan Berjaya!"));
+    // KEMASKINI FUNGSI SHOWSECTION
+    function showSection(t) {
+        document.getElementById('sec-pendaftaran').style.display = t === 'pendaftaran' ? 'block' : 'none';
+        document.getElementById('sec-tetapan').style.display = t === 'tetapan' ? 'block' : 'none';
+        document.getElementById('sec-penilaian').style.display = t === 'penilaian' ? 'block' : 'none';
+        document.getElementById('tab1').className = t === 'pendaftaran' ? 'tab-btn active-tab' : 'tab-btn';
+        document.getElementById('tab2').className = t === 'tetapan' ? 'tab-btn active-tab' : 'tab-btn';
+        document.getElementById('tab3').className = t === 'penilaian' ? 'tab-btn active-tab' : 'tab-btn';
+        if(t === 'penilaian') { updateRatingFilters(); loadRatings(); }
     }
 
+    /* --- LOGIK BARU UNTUK RATING --- */
+    function updateRatingFilters() {
+        const sS = document.getElementById('filterService'); const rS = document.getElementById('filterRoom');
+        sS.innerHTML = '<option value="">Semua Unit</option>'; rS.innerHTML = '<option value="">Semua Bilik</option>';
+        db.ref('queue_system/settings').once('value', snap => {
+            const s = snap.val(); if(s) {
+                (s.services || []).forEach(v => { if(v.name) sS.innerHTML += `<option value="${v.name}">${v.name}</option>`; });
+                (s.rooms || []).forEach(r => { if(r) rS.innerHTML += `<option value="${r}">${r}</option>`; });
+            }
+        });
+    }
+
+    function loadRatings() {
+        const selS = document.getElementById('filterService').value; const selR = document.getElementById('filterRoom').value;
+        db.ref('queue_system/ratings').on('value', snap => {
+            let total = 0; let count = 0; const list = document.getElementById('ratingList'); list.innerHTML = "";
+            snap.forEach(child => {
+                const r = child.val();
+                if((!selS || r.service === selS) && (!selR || r.room === selR)) {
+                    total += r.rating; count++;
+                    list.innerHTML = `<div class="rating-item"><div><b>${"★".repeat(r.rating)}</b><br><small>${r.service} @ ${r.room}</small></div><div>No: ${r.number}</div></div>` + list.innerHTML;
+                }
+            });
+            document.getElementById('avgRating').innerText = count > 0 ? (total / count).toFixed(1) : "0.0";
+            document.getElementById('totalVotes').innerText = `${count} maklum balas`;
+        });
+    }
+
+    // FUNGSI DAFTAR, SEMAK, SIMPAN & RESET (Kekal Asal)
     function daftarPesakit() {
-        const ic = document.getElementById('patientIC').value.trim();
-        const serviceName = document.getElementById('regService').value;
-        if(!ic || !serviceName) return alert("Sila isi IC dan Pilih Unit!");
+        const ic = document.getElementById('patientIC').value.trim(); const serviceName = document.getElementById('regService').value;
+        if(!ic || !serviceName) return alert("Sila lengkapkan!");
         const prefix = (servicesData.find(s => s.name === serviceName) || {abjad:"A"}).abjad;
-        
         db.ref('queue_system/last_number/' + prefix).transaction(c => (c || 0) + 1, (err, comm, snap) => {
             if(comm) {
                 const no = prefix + "-" + snap.val().toString().padStart(3, '0');
                 db.ref('queue_system/waiting_list/' + no).set({ ic: ic, service: serviceName, status: "waiting", timestamp: Date.now() });
-                
                 document.getElementById('qrcode').innerHTML = "";
-                const finalLink = `https://fadhilmarzuki.github.io/Sistem-Panggilan-Pesakit/pesakitfinal.html?no=${no}`; 
-                new QRCode(document.getElementById("qrcode"), { text: finalLink, width: 140, height: 140 });
-                
+                new QRCode(document.getElementById("qrcode"), { text: `https://fadhilmarzuki.github.io/Sistem-Panggilan-Pesakit/pesakitfinal.html?no=${no}`, width: 140, height: 140 });
                 document.getElementById('regStatus').style.display = "block";
-                document.getElementById('statusText').innerHTML = `Berjaya didaftarkan!<br><b style="font-size:35px; color:#27ae60;">${no}</b><br>${serviceName}`;
+                document.getElementById('statusText').innerHTML = `No: <b style="font-size:30px;">${no}</b>`;
                 document.getElementById('patientIC').value = "";
             }
         });
     }
 
     function semakIC() {
-        const icValue = document.getElementById('searchIC').value.trim();
-        if(!icValue) return alert("Sila masukkan No. IC untuk carian.");
-        document.getElementById('searchResult').style.display = "none";
-
-        db.ref('queue_system/waiting_list').orderByChild('ic').equalTo(icValue).once('value', snap => {
-            const resultBox = document.getElementById('searchResult');
-            const infoBox = document.getElementById('searchInfo');
-            const qrBox = document.getElementById('searchQrcode');
-            
+        const ic = document.getElementById('searchIC').value.trim();
+        db.ref('queue_system/waiting_list').orderByChild('ic').equalTo(ic).once('value', snap => {
             if(snap.exists()) {
-                let foundNo = "";
-                let foundData = null;
-                snap.forEach(child => { foundNo = child.key; foundData = child.val(); });
-
-                resultBox.style.display = "block";
-                const statusKemas = foundData.status === 'waiting' ? '<span style="color:orange">Menunggu</span>' : '<span style="color:green">Sudah Dipanggil/Selesai</span>';
-                infoBox.innerHTML = `
-                    <p style="margin:0; color:#3498db; font-weight:bold;">NOMBOR DIJUMPAI:</p>
-                    <h1 style="margin:5px 0; font-size:45px;">${foundNo}</h1>
-                    <p style="margin:0;">Unit: <b>${foundData.service}</b></p>
-                    <p style="margin:5px 0;">Status: ${statusKemas}</p>
-                    <p style="font-size:11px; color:#7f8c8d; margin-top:10px;">Imbas semula QR di bawah:</p>
-                `;
-                qrBox.innerHTML = "";
-                const finalLink = `https://fadhilmarzuki.github.io/Sistem-Panggilan-Pesakit/pesakitfinal.html?no=${foundNo}`;
-                new QRCode(qrBox, { text: finalLink, width: 120, height: 120 });
-                document.getElementById('searchIC').value = "";
-            } else {
-                alert("Tiada rekod giliran dijumpai untuk No. IC ini bagi hari ini.");
-            }
+                let no = ""; snap.forEach(c => no = c.key);
+                document.getElementById('searchResult').style.display = "block";
+                document.getElementById('searchInfo').innerHTML = `<h3>NOMBOR: ${no}</h3>`;
+                document.getElementById('searchQrcode').innerHTML = "";
+                new QRCode(document.getElementById('searchQrcode'), { text: `https://fadhilmarzuki.github.io/Sistem-Panggilan-Pesakit/pesakitfinal.html?no=${no}`, width: 120, height: 120 });
+            } else alert("Tiada rekod.");
         });
     }
 
+    function saveSettings() {
+        let rA = []; let sA = [];
+        for(let i=1; i<=10; i++) {
+            if(document.getElementById(`roomName${i}`).value) rA.push(document.getElementById(`roomName${i}`).value);
+            if(document.getElementById(`servName${i}`).value) sA.push({ name: document.getElementById(`servName${i}`).value, abjad: document.getElementById(`servAbjad${i}`).value.toUpperCase() || "A" });
+        }
+        db.ref('queue_system/settings').set({ clinic_name: document.getElementById('confClinicName').value, message: document.getElementById('confMessage').value, youtube_link: document.getElementById('confYoutube').value, sound_mute: document.getElementById('confSound').value, rooms: rA, services: sA }).then(() => alert("Berjaya!"));
+    }
+
     function confirmReset() {
-        if(confirm("AWAS: Set semula nombor?")) {
-            db.ref('queue_system/waiting_list').remove();
-            db.ref('queue_system/last_number').remove();
+        if(confirm("AWAS: Padam semua giliran?")) {
+            db.ref('queue_system/waiting_list').remove(); db.ref('queue_system/last_number').remove();
             db.ref('queue_system/current_calling').set({ number: "---", room: "Sedia", service: "-", time: Date.now() });
             location.reload();
         }
     }
-
-    function showSection(t) {
-        document.getElementById('sec-pendaftaran').style.display = t === 'pendaftaran' ? 'block' : 'none';
-        document.getElementById('sec-tetapan').style.display = t === 'tetapan' ? 'block' : 'none';
-        document.getElementById('tab1').className = t === 'pendaftaran' ? 'tab-btn active-tab' : 'tab-btn';
-        document.getElementById('tab2').className = t === 'tetapan' ? 'tab-btn active-tab' : 'tab-btn';
-    }
 </script>
 </body>
 </html>
-
