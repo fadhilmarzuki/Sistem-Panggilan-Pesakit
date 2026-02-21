@@ -3,124 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Status Pesakit - SPGP JKN Kedah</title>
+    <title>Status Pesakit - Live</title>
     <style>
         * { box-sizing: border-box; }
         body { 
             font-family: 'Segoe UI', sans-serif; 
             background: #f0f4f8; 
             margin: 0; 
-            padding: 10px; /* Padding dikurangkan sedikit untuk telefon */
+            padding: 0; /* Buang padding luar */
             display: flex; 
             justify-content: center; 
             min-height: 100vh;
         }
         
-        /* Container dibuat fleksibel */
         .container { 
-            width: 100%; 
-            max-width: 450px; /* Kekal saiz asal untuk desktop */
+            width: 100%; /* Gunakan 100% lebar skrin */
             display: flex;
             flex-direction: column;
+            padding: 10px;
         }
 
         .card { 
             background: white; 
-            padding: 25px; 
-            border-radius: 25px; 
+            padding: 30px 20px; 
+            border-radius: 20px; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
             text-align: center; 
             margin-bottom: 20px; 
-            width: 100%; 
+            width: 100%; /* Penuhi container */
+            flex-grow: 1; /* Biar dia memanjang jika skrin tinggi */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
-        .welcome-header { color: #1a73e8; font-size: 20px; font-weight: bold; margin-bottom: 20px; display: block; line-height: 1.3; }
+        .welcome-header { color: #1a73e8; font-size: 22px; font-weight: bold; margin-bottom: 20px; display: block; }
         
-        /* Kekalkan saiz asal 65px tetapi fleksibel mengikut skrin */
+        /* Saiz Nombor Giliran Diperbesarkan */
         .big-text { 
-            font-size: clamp(45px, 15vw, 65px); 
+            font-size: 25vw; /* Saiz dinamik ikut lebar skrin */
             font-weight: 900; 
             color: #2c3e50; 
             margin: 10px 0; 
+            line-height: 1;
         }
 
-        .status-box { padding: 20px; border-radius: 15px; margin-top: 20px; font-weight: bold; }
+        .status-box { padding: 25px; border-radius: 15px; margin-top: 20px; font-weight: bold; font-size: 24px; }
         .waiting { background: #fff3cd; color: #856404; }
         .called { background: #d4edda; color: #155724; animation: pulse 1.5s infinite; }
         
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
         
-        input { width: 100%; padding: 15px; border-radius: 12px; border: 2px solid #ddd; text-align: center; font-size: 18px; margin-bottom: 15px; }
-        .btn-primary { width: 100%; padding: 15px; background: #1a73e8; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 18px; margin-bottom: 10px; }
-        .btn-secondary { width: 100%; padding: 12px; background: #34495e; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        input { width: 100%; padding: 20px; border-radius: 12px; border: 2px solid #ddd; text-align: center; font-size: 24px; margin-bottom: 15px; }
+        .btn-primary { width: 100%; padding: 20px; background: #1a73e8; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 20px; margin-bottom: 10px; }
+        .btn-secondary { width: 100%; padding: 15px; background: #34495e; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 18px; }
         
-        #comingBtn { background: #e67e22; color: white; border: none; padding: 18px; border-radius: 12px; font-weight: bold; font-size: 16px; margin-top: 20px; cursor: pointer; width: 100%; }
-        #comingBtn:disabled { background: #bdc3c7; cursor: not-allowed; }
+        #comingBtn { background: #e67e22; color: white; border: none; padding: 25px; border-radius: 15px; font-weight: bold; font-size: 20px; margin-top: 20px; cursor: pointer; width: 100%; }
         
-        .divider { margin: 25px 0; border-top: 1px solid #eee; position: relative; }
-        .divider span { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: white; padding: 0 15px; color: #95a5a6; font-size: 14px; }
+        .divider { margin: 30px 0; border-top: 2px solid #eee; position: relative; }
+        .divider span { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); background: white; padding: 0 15px; color: #95a5a6; font-size: 16px; }
         
-        .info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .info-label { color: #7f8c8d; font-size: 14px; }
-        .info-val { font-weight: bold; font-size: 18px; }
-        .instruction-note { font-size: 12px; color: #e74c3c; margin-top: 15px; font-style: italic; border: 1px dashed #e74c3c; padding: 10px; border-radius: 10px; }
+        .info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 10px; }
+        .info-label { color: #7f8c8d; font-size: 16px; }
+        .info-val { font-weight: bold; font-size: 22px; }
+        .instruction-note { font-size: 14px; color: #e74c3c; margin-top: 20px; font-weight: bold; border: 2px dashed #e74c3c; padding: 15px; border-radius: 10px; }
+
+        @media (min-width: 600px) {
+            .container { max-width: 450px; }
+            .big-text { font-size: 80px; }
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="card" id="loginView">
-        <h1 id="dispClinicName" style="font-size: 22px; color: #2c3e50; margin: 0;">Klinik Kesihatan</h1>
-        
+        <h1 id="dispClinicName" style="font-size: 26px;">Sila Tunggu</h1>
         <div id="manualInput">
-            <p style="margin-top: 20px; color: #7f8c8d; font-size: 15px;">Pilihan 1: Masukkan No. Giliran</p>
-            <input type="text" id="inputNum" placeholder="Contoh: A-001">
-            <button class="btn-primary" onclick="checkStatus()">MULA PANTAU</button>
-
+            <p>Masukkan No. Giliran:</p>
+            <input type="text" id="inputNum" placeholder="A-001">
+            <button class="btn-primary" onclick="checkStatus()">MULA SEMAK</button>
             <div class="divider"><span>ATAU</span></div>
-
-            <p style="color: #7f8c8d; font-size: 15px;">Pilihan 2: Semak Guna No. IC</p>
-            <input type="text" id="inputIC" placeholder="Masukkan No. IC Anda">
-            <button class="btn-secondary" onclick="checkByIC()">CARI NOMBOR SAYA</button>
+            <p>Masukkan No. IC:</p>
+            <input type="text" id="inputIC" placeholder="Tanpa -">
+            <button class="btn-secondary" onclick="checkByIC()">CARI GUNA IC</button>
         </div>
-
         <div id="qrWelcome" style="display:none;">
-            <p>Nombor Giliran Dikesan:</p>
+            <p>Nombor Dikesan:</p>
             <div id="detectedNum" class="big-text" style="color:#1a73e8;">---</div>
             <button class="btn-primary" onclick="checkStatus()" style="background:#27ae60;">AKTIFKAN NOTIFIKASI</button>
-            <p style="font-size:13px; color:#e74c3c; margin-top:15px; font-weight:bold;">Sila tekan butang hijau untuk mula.</p>
         </div>
     </div>
 
     <div class="card" id="statusView" style="display:none;">
         <div class="welcome-header" id="welcomeMsg">Status Giliran</div>
-        <div style="color: #7f8c8d; font-size: 14px;">NOMBOR ANDA:</div>
+        <div style="color: #7f8c8d; font-size: 18px; font-weight: bold;">NOMBOR ANDA:</div>
         <div id="myNumDisplay" class="big-text">---</div>
         
         <div id="statusIndicator" class="status-box waiting">
             <div id="statusLabel">Menunggu...</div>
-            <div id="roomLabel" style="font-weight:normal; font-size:14px; margin-top:5px;">Sila tunggu panggilan doktor</div>
+            <div id="roomLabel" style="font-weight:normal; font-size:16px; margin-top:5px;">Sila tunggu panggilan doktor</div>
         </div>
 
         <div id="queueDetails" style="margin-top:25px; border-top:1px dashed #ddd; padding-top:15px;">
             <div class="info-row">
-                <span class="info-label">Nombor sekarang:</span>
+                <span class="info-label">Panggilan Sekarang:</span>
                 <span id="currentNumVal" class="info-val" style="color:#e74c3c">---</span>
             </div>
             <div class="info-row">
-                <span class="info-label">Baki menunggu:</span>
-                <span id="remainingCount" class="info-val" style="color:#1a73e8">0 orang</span>
+                <span class="info-label">Baki Menunggu:</span>
+                <span id="remainingCount" class="info-val" style="color:#1a73e8">0</span>
             </div>
         </div>
 
         <button id="comingBtn" style="display:none;" onclick="notifyDoctor()">SAYA SEDANG MENUJU KE SANA</button>
         
         <div class="instruction-note">
-            ⚠️ <b>Jangan tutup laman ini</b> untuk kekal menerima notifikasi getaran.
+            ⚠️ JANGAN TUTUP LAMAN INI<br>Telefon akan BERGETAR apabila dipanggil.
         </div>
         
-        <div style="margin-top: 25px;">
-            <button style="background:transparent; color:#7f8c8d; border:none; text-decoration:underline; cursor:pointer; font-size: 14px;" onclick="location.reload()">Tukar Nombor / IC</button>
+        <div style="margin-top: 30px;">
+            <button style="background:transparent; color:#7f8c8d; border:none; text-decoration:underline; font-size: 16px;" onclick="location.reload()">Tukar Nombor / IC</button>
         </div>
     </div>
 </div>
@@ -199,7 +202,7 @@
                     document.getElementById('comingBtn').style.background = "#bdc3c7";
                 }
                 document.getElementById('statusIndicator').className = "status-box called";
-                document.getElementById('statusLabel').innerText = "GILIRAN ANDA!";
+                document.getElementById('statusLabel').innerText = "SILA MASUK!";
                 if(data.lastRecall && (initialLoad || data.lastRecall !== currentLocalLastRecall)) {
                     currentLocalLastRecall = data.lastRecall; initialLoad = false; playSound();
                 } else if(initialLoad) { initialLoad = false; playSound(); }
@@ -222,7 +225,7 @@
                 db.ref('queue_system/waiting_list').orderByChild('status').equalTo('waiting').on('value', list => {
                     let count = 0;
                     list.forEach(child => { if(child.val().service === data.service && child.val().timestamp < data.timestamp) count++; });
-                    document.getElementById('remainingCount').innerText = count + " orang";
+                    document.getElementById('remainingCount').innerText = count;
                 });
             }
         });
@@ -231,7 +234,7 @@
     function playSound() {
         const audio = document.getElementById('alertSound');
         audio.currentTime = 0; audio.play().catch(e => {});
-        if(window.navigator.vibrate) window.navigator.vibrate([300, 100, 300, 100, 300]);
+        if(window.navigator.vibrate) window.navigator.vibrate([500, 200, 500, 200, 500]);
     }
 
     function notifyDoctor() {
