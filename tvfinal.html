@@ -1,223 +1,542 @@
 <!DOCTYPE html>
 <html lang="ms">
+
 <head>
     <meta charset="UTF-8">
-    <title>Paparan Smart TV (Remote Friendly)</title>
+    <title>Smart TV - KK BAS (Playlist Supported)</title>
     <style>
-        * { box-sizing: border-box; }
-        body { margin: 0; padding: 0; font-family: 'Arial Black', sans-serif; background: #2c3e50; overflow: hidden; color: white; }
-        .header-container { display: flex; height: 15vh; border-bottom: 5px solid #fff; }
-        .main-container { display: flex; height: 75vh; }
-        .footer-container { height: 10vh; background: #1a73e8; display: flex; align-items: center; overflow: hidden; border-top: 5px solid #fff; position: relative; z-index: 10; }
-        .header-left { width: 70%; background: #1a73e8; display: flex; align-items: center; justify-content: center; border-right: 5px solid #fff; padding: 10px 30px; text-align: center; }
-        #clinicName { font-size: 55px; line-height: 1.1; display: block; width: 100%; word-wrap: break-word; white-space: pre-wrap; }
-        .header-right { width: 30%; background: #e74c3c; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .video-section { width: 70%; background: #000; border-right: 5px solid #fff; position: relative; }
-        #ytPlayer { width: 100%; height: 100%; }
-        .queue-section { width: 30%; background: #fff; color: #2c3e50; display: flex; flex-direction: column; overflow: hidden; }
-        .current-call { height: 40%; display: flex; flex-direction: column; align-items: center; justify-content: center; border-bottom: 3px solid #eee; padding: 10px; }
-        .label-now { font-size: 18px; color: #e74c3c; font-weight: bold; }
-        .num-now { font-size: 90px; font-weight: 900; color: #2c3e50; line-height: 1; margin: 5px 0; }
-        .room-now { font-size: 40px; font-weight: bold; color: #1a73e8; }
-        .history-section { height: 60%; padding: 10px; display: flex; flex-direction: column; }
-        .history-title { text-align: center; font-size: 16px; color: #7f8c8d; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-bottom: 8px; flex-shrink: 0; }
-        .history-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex-grow: 1; align-content: start; }
-        .history-item { background: #f8f9fa; border: 1px solid #e1e4e8; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 5px; height: 100%; }
-        .h-num { font-size: 26px; font-weight: 900; color: #2c3e50; }
-        .h-room { font-size: 14px; color: #1a73e8; font-weight: bold; }
-        #tvTime { font-size: 38px; font-weight: bold; }
-        #tvDate { font-size: 18px; opacity: 0.9; }
-        .marquee { white-space: nowrap; font-size: 28px; animation: marquee 25s linear infinite; padding-left: 100%; }
-        @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
-        
-        #overlay { position: fixed; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.98); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        #startBtn { padding: 30px 60px; font-size: 35px; cursor: pointer; background: #27ae60; color: white; border: 5px solid white; border-radius: 20px; outline: none; transition: 0.3s; }
-        #startBtn:focus { transform: scale(1.1); background: #2ecc71; box-shadow: 0 0 30px #27ae60; }
-        .blink { animation: blinker 1s linear 5; }
-        @keyframes blinker { 50% { opacity: 0; } }
-    </style>
-</head>
-<body>
-
-<div id="overlay">
-    <h1 style="color:white; margin-bottom:10px;">SISTEM PENGURUSAN GILIRAN PESAKIT (SPGP)</h1>
-    <p style="color:white; opacity:0.8; margin-bottom:30px;">Tekan butang 'OK' atau 'ENTER' pada remote untuk mula</p>
-    <button id="startBtn" onclick="initTV()" autofocus>MULA PAPARAN TV</button>
-</div>
-
-<div class="header-container">
-    <div class="header-left"><div id="clinicName">NAMA KK</div></div>
-    <div class="header-right"><div id="tvTime">00:00:00</div><div id="tvDate">Memuatkan...</div></div>
-</div>
-
-<div class="main-container">
-    <div class="video-section"><div id="ytPlayer"></div></div>
-    <div class="queue-section">
-        <div class="current-call" id="callCard">
-            <div class="label-now">PANGGILAN TERKINI</div>
-            <div id="tvNum" class="num-now">---</div>
-            <div id="tvRoom" class="room-now">SEDIA</div>
-        </div>
-        <div class="history-section">
-            <div class="history-title">SENARAI GILIRAN AKTIF</div>
-            <div id="historyGrid" class="history-grid"></div>
-        </div>
-    </div>
-</div>
-
-<div class="footer-container">
-    <div class="marquee" id="tvMarquee">Selamat Datang ke Klinik Kesihatan.</div>
-</div>
-
-<script src="https://www.youtube.com/iframe_api"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
-
-<script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyBRK634U8ER_ZFOi1SV9nu8McndUWdD-rg",
-        databaseURL: "https://sistem-panggilan-pelanggan-default-rtdb.asia-southeast1.firebasedatabase.app"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    let player, malayVoice, systemReady = false, currentYoutubeID = "77ZozI0rw7w", currentMuteStatus = "1";
-
-    window.onload = function() {
-        document.getElementById('startBtn').focus();
-    };
-
-    window.addEventListener('keydown', function(e) {
-        if(!systemReady) initTV();
-    });
-
-    function onYouTubeIframeAPIReady() {
-        player = new YT.Player('ytPlayer', {
-            videoId: currentYoutubeID,
-            playerVars: { 'autoplay': 1, 'mute': 1, 'loop': 1, 'playlist': currentYoutubeID, 'controls': 0, 'rel': 0 },
-            events: { 'onReady': onPlayerReady }
-        });
-    }
-
-    function onPlayerReady(event) { console.log("Player Ready"); }
-
-    // PEMBAIKAN 1: Logik pencarian suara yang lebih fleksibel
-    function loadVoices() {
-        const voices = window.speechSynthesis.getVoices();
-        // Cari suara Bahasa Melayu terbaik yang ada
-        malayVoice = voices.find(v => v.lang.includes('ms-MY') || v.name.includes('Zira') || v.name.includes('Google Bahasa Melayu') || v.name.includes('Melayu'));
-        console.log("Suara dikesan:", malayVoice ? malayVoice.name : "Tiada suara Melayu");
-    }
-    
-    if (window.speechSynthesis.onvoiceschanged !== undefined) {
-        window.speechSynthesis.onvoiceschanged = loadVoices;
-    }
-    loadVoices();
-
-    // PEMBAIKAN 2: Logik pengumuman yang memaksa pembatalan suara sedia ada (cancel)
-    function announce(num, room) {
-        if (!systemReady) return;
-        
-        // Perlahankan video jika suara video dihidupkan
-        if (player && player.setVolume && currentMuteStatus === "0") player.setVolume(20);
-        
-        const formattedNum = num.split('').join(' ');
-        const msg = new SpeechSynthesisUtterance(`Nombor, ${formattedNum}. Sila ke ${room}.`);
-        
-        if (malayVoice) msg.voice = malayVoice; 
-        msg.lang = 'ms-MY'; 
-        msg.rate = 0.85;
-        msg.pitch = 1;
-
-        msg.onend = function() { 
-            // Kembalikan volume video selepas suara tamat
-            if (player && player.setVolume && currentMuteStatus === "0") player.setVolume(100); 
-        };
-
-        msg.onerror = function(e) {
-            console.error("SpeechSynthesis Error:", e);
-            if (player && player.setVolume && currentMuteStatus === "0") player.setVolume(100);
-        };
-
-        // Paksa suara dimainkan segera
-        window.speechSynthesis.cancel(); 
-        window.speechSynthesis.speak(msg);
-    }
-
-    function fitClinicName() {
-        const parent = document.querySelector('.header-left');
-        const child = document.getElementById('clinicName');
-        let fontSize = 55; child.style.fontSize = fontSize + "px";
-        while ((child.scrollHeight > parent.clientHeight - 20 || child.scrollWidth > parent.clientWidth - 60) && fontSize > 35) {
-            fontSize--; child.style.fontSize = fontSize + "px";
+        * {
+            box-sizing: border-box;
         }
-    }
 
-    function extractYoutubeID(url) {
-        const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
-        const match = url?.match(regExp);
-        return (match && match[7].length == 11) ? match[7] : "77ZozI0rw7w";
-    }
-
-    // PEMBAIKAN 3: "Prime" audio semasa klik MULA
-    function initTV() {
-        if(systemReady) return;
-        document.getElementById('overlay').style.display = 'none';
-        systemReady = true;
-        
-        // Segarkan semula senarai suara
-        loadVoices();
-        
-        // "Unlock" Speech Synthesis pada Smart TV dengan suara senyap
-        const unlockMsg = new SpeechSynthesisUtterance("");
-        window.speechSynthesis.speak(unlockMsg);
-
-        if (player) {
-            player.playVideo();
-            if (currentMuteStatus === "0") { player.unMute(); player.setVolume(100); } else { player.mute(); }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial Black', sans-serif;
+            background: #2c3e50;
+            overflow: hidden;
+            color: white;
         }
-    }
 
-    db.ref('queue_system/settings').on('value', snap => {
-        const s = snap.val();
-        if(s) {
-            document.getElementById('clinicName').innerText = s.clinic_name || "KK BAS";
-            setTimeout(fitClinicName, 100); 
-            document.getElementById('tvMarquee').innerText = s.message || "Selamat Datang...";
-            const newID = extractYoutubeID(s.youtube_link);
-            currentMuteStatus = s.sound_mute !== undefined ? s.sound_mute : "1";
-            if (player && player.loadVideoById) {
-                if(newID !== currentYoutubeID) { currentYoutubeID = newID; player.loadVideoById({ videoId: newID }); }
-                if (currentMuteStatus === "0" && systemReady) { player.unMute(); player.setVolume(100); } else { player.mute(); }
+        .header-container {
+            display: flex;
+            height: 15vh;
+            border-bottom: 5px solid #fff;
+        }
+
+        .main-container {
+            display: flex;
+            height: 75vh;
+        }
+
+        .footer-container {
+            height: 10vh;
+            background: #1a73e8;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            border-top: 5px solid #fff;
+            position: relative;
+            z-index: 10;
+        }
+
+        .header-left {
+            width: 70%;
+            background: #1a73e8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-right: 5px solid #fff;
+            padding: 10px 30px;
+            text-align: center;
+        }
+
+        #clinicName {
+            font-size: 55px;
+            line-height: 1.1;
+            display: block;
+            width: 100%;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .header-right {
+            width: 30%;
+            background: #e74c3c;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .video-section {
+            width: 70%;
+            background: #000;
+            border-right: 5px solid #fff;
+            position: relative;
+        }
+
+        #ytPlayer {
+            width: 100%;
+            height: 100%;
+        }
+
+        .queue-section {
+            width: 30%;
+            background: #fff;
+            color: #2c3e50;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .current-call {
+            height: 40%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 3px solid #eee;
+            padding: 10px;
+        }
+
+        .label-now {
+            font-size: 18px;
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .num-now {
+            font-size: 90px;
+            font-weight: 900;
+            color: #2c3e50;
+            line-height: 1;
+            margin: 5px 0;
+        }
+
+        .room-now {
+            font-size: 40px;
+            font-weight: bold;
+            color: #1a73e8;
+        }
+
+        .history-section {
+            height: 60%;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .history-title {
+            text-align: center;
+            font-size: 16px;
+            color: #7f8c8d;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            margin-bottom: 8px;
+            flex-shrink: 0;
+        }
+
+        .history-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            flex-grow: 1;
+            align-content: start;
+        }
+
+        .history-item {
+            background: #f8f9fa;
+            border: 1px solid #e1e4e8;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+            height: 100%;
+        }
+
+        .h-num {
+            font-size: 26px;
+            font-weight: 900;
+            color: #2c3e50;
+        }
+
+        .h-room {
+            font-size: 14px;
+            color: #1a73e8;
+            font-weight: bold;
+        }
+
+        #tvTime {
+            font-size: 38px;
+            font-weight: bold;
+        }
+
+        #tvDate {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .marquee {
+            white-space: nowrap;
+            font-size: 28px;
+            animation: marquee 25s linear infinite;
+            padding-left: 100%;
+        }
+
+        @keyframes marquee {
+            0% {
+                transform: translate(0, 0);
+            }
+
+            100% {
+                transform: translate(-100%, 0);
             }
         }
-    });
 
-    db.ref('queue_system/current_calling').on('value', snap => {
-        const d = snap.val();
-        if (d && systemReady) {
-            document.getElementById('tvNum').innerText = d.number;
-            document.getElementById('tvRoom').innerText = d.room;
-            const card = document.getElementById('callCard');
-            card.classList.remove('blink'); void card.offsetWidth; card.classList.add('blink');
-            announce(d.number, d.room);
+        #overlay {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.98);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
-    });
 
-    db.ref('queue_system/waiting_list').on('value', snap => {
-        const list = snap.val(); if (!list) return;
-        const historyData = Object.keys(list).map(k => ({ number: k, ...list[k] })).filter(i => i.status === 'called').sort((a, b) => b.timestamp - a.timestamp).slice(0, 6);
-        const grid = document.getElementById('historyGrid');
-        grid.innerHTML = "";
-        historyData.forEach(i => { grid.innerHTML += `<div class="history-item"><div class="h-num">${i.number}</div><div class="h-room">${i.calledBy || 'Bilik'}</div></div>`; });
-    });
+        #startBtn {
+            padding: 30px 60px;
+            font-size: 35px;
+            cursor: pointer;
+            background: #27ae60;
+            color: white;
+            border: 5px solid white;
+            border-radius: 20px;
+            outline: none;
+            transition: 0.3s;
+        }
 
-    function updateClock() {
-        const now = new Date();
-        document.getElementById('tvTime').innerText = now.toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }).toUpperCase();
-        document.getElementById('tvDate').innerText = now.toLocaleDateString('ms-MY', { weekday: 'short', day: 'numeric', month: 'short' });
-    }
-    setInterval(updateClock, 1000);
-</script>
+        #startBtn:focus {
+            transform: scale(1.1);
+            background: #2ecc71;
+            box-shadow: 0 0 30px #27ae60;
+        }
+
+        .blink {
+            animation: blinker 1s linear 5;
+        }
+
+        @keyframes blinker {
+            50% {
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="overlay">
+        <h1 style="color:white; margin-bottom:10px;">SISTEM PANGGILAN KK BAS</h1>
+        <p style="color:white; opacity:0.8; margin-bottom:30px;">Tekan butang 'OK' atau 'ENTER' pada remote untuk mula
+        </p>
+        <button id="startBtn" onclick="initTV()" autofocus>MULA PAPARAN TV</button>
+    </div>
+
+    <div class="header-container">
+        <div class="header-left">
+            <div id="clinicName">KK BAS</div>
+        </div>
+        <div class="header-right">
+            <div id="tvTime">00:00:00</div>
+            <div id="tvDate">Memuatkan...</div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="video-section">
+            <div id="ytPlayer"></div>
+        </div>
+        <div class="queue-section">
+            <div class="current-call" id="callCard">
+                <div class="label-now">PANGGILAN TERKINI</div>
+                <div id="tvNum" class="num-now">---</div>
+                <div id="tvRoom" class="room-now">SEDIA</div>
+            </div>
+            <div class="history-section">
+                <div class="history-title">SENARAI GILIRAN AKTIF</div>
+                <div id="historyGrid" class="history-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-container">
+        <div class="marquee" id="tvMarquee">Selamat Datang ke Klinik Kesihatan.</div>
+    </div>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBRK634U8ER_ZFOi1SV9nu8McndUWdD-rg",
+            databaseURL: "https://sistem-panggilan-pelanggan-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let player, malayVoice, systemReady = false;
+        let currentVideoID = "77ZozI0rw7w";
+        let currentPlaylistID = "";
+        let currentMuteStatus = "1";
+
+        window.onload = function () {
+            document.getElementById('startBtn').focus();
+        };
+
+        window.addEventListener('keydown', function (e) {
+            if (!systemReady) initTV();
+        });
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('ytPlayer', {
+                height: '100%',
+                width: '100%',
+                playerVars: {
+                    'autoplay': 1,
+                    'mute': 1,
+                    'loop': 1,
+                    'controls': 0,
+                    'rel': 0,
+                    'modestbranding': 1,
+                    'playlist': currentVideoID // Default loop untuk single video
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            console.log("Player Ready");
+            if (systemReady) player.playVideo();
+        }
+
+        // Memastikan loop berfungsi walaupun dalam playlist
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.ENDED) {
+                if (currentPlaylistID) {
+                    // Jika video terakhir dalam playlist tamat, pusing balik ke awal
+                    const currentIndex = player.getPlaylistIndex();
+                    const playlist = player.getPlaylist();
+                    if (currentIndex === playlist.length - 1) {
+                        player.playVideoAt(0);
+                    }
+                } else {
+                    player.playVideo();
+                }
+            }
+        }
+
+        function loadVoices() {
+            const voices = window.speechSynthesis.getVoices();
+            // Lebih fleksibel: Cari Melayu dahulu, kemudian Indonesia (bunyi hampir sama), atau sebarang suara wanita Google
+            malayVoice = voices.find(v =>
+                v.lang.includes('ms-MY') ||
+                v.name.includes('Zira') ||
+                v.name.includes('Google Bahasa Melayu') ||
+                v.lang.includes('id-ID') ||
+                v.name.includes('Indonesian') ||
+                v.name.includes('Female')
+            );
+        }
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+        loadVoices();
+
+        function toMalayWords(text, spellOut = true) {
+            const map = {
+                '0': 'kosong', '1': 'satu', '2': 'dua', '3': 'tiga', '4': 'empat',
+                '5': 'lima', '6': 'enam', '7': 'tujuh', '8': 'lapan', '9': 'sembilan'
+            };
+            if (spellOut) {
+                // Eja satu-satu untuk nombor giliran (cth: A , satu dua tiga)
+                // Tambah koma selepas huruf pertama untuk 'pause'
+                let chars = text.toString().split('');
+                return chars.map((char, index) => {
+                    let word = map[char] || char;
+                    return (index === 0 && isNaN(char)) ? word + ' , ' : word;
+                }).join(' ');
+            } else {
+                // Sebut perkataan penuh untuk Bilik (lowercase paksa supaya tak eja acronim)
+                // Tukar angka di dalamnya (cth: Bilik satu)
+                return text.toString().toLowerCase().replace(/[0-9]/g, (digit) => ' ' + map[digit] + ' ');
+            }
+        }
+
+        function announce(num, room) {
+            if (!systemReady) return;
+
+            // Perlahankan video jika tidak di-mute
+            if (player && currentMuteStatus == "0") player.setVolume(20);
+
+            const malayNum = toMalayWords(num, true);
+            const malayRoom = toMalayWords(room, false);
+            const msg = new SpeechSynthesisUtterance(`Nombor, ${malayNum}. Sila ke ${malayRoom}.`);
+
+            // Gunakan malayVoice jika jumpa, jika tidak biarkan default sistem
+            if (malayVoice) {
+                msg.voice = malayVoice;
+                msg.lang = malayVoice.lang;
+            } else {
+                msg.lang = 'ms-MY';
+            }
+
+            msg.rate = 0.85;
+            msg.pitch = 1;
+
+            msg.onend = function () {
+                if (player && currentMuteStatus == "0") player.setVolume(100);
+            };
+
+            msg.onerror = function (e) {
+                console.error("Speech Synthesis Error:", e);
+                if (player && currentMuteStatus == "0") player.setVolume(100);
+            };
+
+            window.speechSynthesis.speak(msg);
+        }
+
+        function fitClinicName() {
+            const parent = document.querySelector('.header-left');
+            const child = document.getElementById('clinicName');
+            if (!parent || !child) return;
+            let fontSize = 55; child.style.fontSize = fontSize + "px";
+            while ((child.scrollHeight > parent.clientHeight - 20 || child.scrollWidth > parent.clientWidth - 60) && fontSize > 35) {
+                fontSize--; child.style.fontSize = fontSize + "px";
+            }
+        }
+
+        // Fungsi pengekstrakan yang dipertingkatkan (Video & Playlist)
+        function extractIDs(url) {
+            let vID = "";
+            let pID = "";
+
+            try {
+                const urlObj = new URL(url);
+                if (urlObj.hostname.includes('youtube.com')) {
+                    vID = urlObj.searchParams.get('v') || "";
+                    pID = urlObj.searchParams.get('list') || "";
+                } else if (urlObj.hostname.includes('youtu.be')) {
+                    vID = urlObj.pathname.substring(1) || "";
+                    pID = urlObj.searchParams.get('list') || "";
+                }
+            } catch (e) {
+                console.log("Invalid URL, using defaults");
+            }
+
+            return { videoId: vID, playlistId: pID };
+        }
+
+        function initTV() {
+            if (systemReady) return;
+            document.getElementById('overlay').style.display = 'none';
+            systemReady = true;
+
+            // Warm-up Audio Context & Speech Synthesis (Sangat penting untuk Smart TV/Browser modern)
+            const warmup = new SpeechSynthesisUtterance("");
+            window.speechSynthesis.speak(warmup);
+
+            if (player) {
+                player.playVideo();
+                if (currentMuteStatus == "0") {
+                    player.unMute();
+                    player.setVolume(100);
+                } else {
+                    player.mute();
+                }
+            }
+        }
+
+        db.ref('queue_system/settings').on('value', snap => {
+            const s = snap.val();
+            if (s) {
+                document.getElementById('clinicName').innerText = s.clinic_name || "KK BAS";
+                setTimeout(fitClinicName, 100);
+                document.getElementById('tvMarquee').innerText = s.message || "Selamat Datang...";
+
+                const ids = extractIDs(s.youtube_link);
+                currentMuteStatus = s.sound_mute !== undefined ? s.sound_mute : "1";
+
+                if (player) {
+                    // Logik memuatkan kandungan baru
+                    if (ids.playlistId && ids.playlistId !== currentPlaylistID) {
+                        currentPlaylistID = ids.playlistId;
+                        player.loadPlaylist({ list: ids.playlistId, listType: 'playlist', index: 0, startSeconds: 0 });
+                        player.setLoop(true);
+                    } else if (ids.videoId && !ids.playlistId && ids.videoId !== currentVideoID) {
+                        currentVideoID = ids.videoId;
+                        currentPlaylistID = "";
+                        player.loadVideoById({ videoId: ids.videoId });
+                    }
+
+                    // Kemaskini status mute (Guna perbandingan longgar == untuk string/number)
+                    if (currentMuteStatus == "0" && systemReady) {
+                        player.unMute();
+                        player.setVolume(100);
+                    } else {
+                        player.mute();
+                    }
+                }
+            }
+        });
+
+        db.ref('queue_system/current_calling').on('value', snap => {
+            const d = snap.val();
+            if (d && systemReady) {
+                document.getElementById('tvNum').innerText = d.number;
+                document.getElementById('tvRoom').innerText = d.room;
+                const card = document.getElementById('callCard');
+                if (card) {
+                    card.classList.remove('blink');
+                    void card.offsetWidth;
+                    card.classList.add('blink');
+                }
+                announce(d.number, d.room);
+            }
+        });
+
+        db.ref('queue_system/waiting_list').on('value', snap => {
+            const list = snap.val(); if (!list) return;
+            const historyData = Object.keys(list)
+                .map(k => ({ number: k, ...list[k] }))
+                .filter(i => i.status === 'called')
+                .sort((a, b) => b.timestamp - a.timestamp)
+                .slice(0, 6);
+
+            const grid = document.getElementById('historyGrid');
+            if (grid) {
+                grid.innerHTML = "";
+                historyData.forEach(i => {
+                    grid.innerHTML += `<div class="history-item"><div class="h-num">${i.number}</div><div class="h-room">${i.calledBy || 'Bilik'}</div></div>`;
+                });
+            }
+        });
+
+        function updateClock() {
+            const now = new Date();
+            const timeEl = document.getElementById('tvTime');
+            const dateEl = document.getElementById('tvDate');
+            if (timeEl) timeEl.innerText = now.toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }).toUpperCase();
+            if (dateEl) dateEl.innerText = now.toLocaleDateString('ms-MY', { weekday: 'short', day: 'numeric', month: 'short' });
+        }
+        setInterval(updateClock, 1000);
+    </script>
 </body>
+
 </html>
