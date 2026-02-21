@@ -30,10 +30,8 @@
         .marquee { white-space: nowrap; font-size: 28px; animation: marquee 25s linear infinite; padding-left: 100%; }
         @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
         
-        /* Overlay Baru */
         #overlay { position: fixed; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.98); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         #startBtn { padding: 30px 60px; font-size: 35px; cursor: pointer; background: #27ae60; color: white; border: 5px solid white; border-radius: 20px; outline: none; transition: 0.3s; }
-        /* Kesan apabila butang dipilih guna remote */
         #startBtn:focus { transform: scale(1.1); background: #2ecc71; box-shadow: 0 0 30px #27ae60; }
         .blink { animation: blinker 1s linear 5; }
         @keyframes blinker { 50% { opacity: 0; } }
@@ -85,12 +83,10 @@
 
     let player, malayVoice, systemReady = false, currentYoutubeID = "77ZozI0rw7w", currentMuteStatus = "1";
 
-    // Autofokus butang setiap kali laman dibuka
     window.onload = function() {
         document.getElementById('startBtn').focus();
     };
 
-    // Benarkan tekan mana-mana butang pada remote untuk mula
     window.addEventListener('keydown', function(e) {
         if(!systemReady) initTV();
     });
@@ -105,20 +101,46 @@
 
     function onPlayerReady(event) { console.log("Player Ready"); }
 
+    // PEMBAIKAN 1: Logik pencarian suara yang lebih fleksibel
     function loadVoices() {
         const voices = window.speechSynthesis.getVoices();
-        malayVoice = voices.find(v => v.lang.includes('ms-MY') || v.name.includes('Zira') || v.name.includes('Google Bahasa Melayu'));
+        // Cari suara Bahasa Melayu terbaik yang ada
+        malayVoice = voices.find(v => v.lang.includes('ms-MY') || v.name.includes('Zira') || v.name.includes('Google Bahasa Melayu') || v.name.includes('Melayu'));
+        console.log("Suara dikesan:", malayVoice ? malayVoice.name : "Tiada suara Melayu");
     }
-    window.speechSynthesis.onvoiceschanged = loadVoices;
+    
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
     loadVoices();
 
+    // PEMBAIKAN 2: Logik pengumuman yang memaksa pembatalan suara sedia ada (cancel)
     function announce(num, room) {
-        if (!systemReady || !malayVoice) return;
-        if (player && currentMuteStatus === "0") player.setVolume(20);
+        if (!systemReady) return;
+        
+        // Perlahankan video jika suara video dihidupkan
+        if (player && player.setVolume && currentMuteStatus === "0") player.setVolume(20);
+        
         const formattedNum = num.split('').join(' ');
         const msg = new SpeechSynthesisUtterance(`Nombor, ${formattedNum}. Sila ke ${room}.`);
-        msg.voice = malayVoice; msg.lang = 'ms-MY'; msg.rate = 0.85;
-        msg.onend = function() { if (player && currentMuteStatus === "0") player.setVolume(100); };
+        
+        if (malayVoice) msg.voice = malayVoice; 
+        msg.lang = 'ms-MY'; 
+        msg.rate = 0.85;
+        msg.pitch = 1;
+
+        msg.onend = function() { 
+            // Kembalikan volume video selepas suara tamat
+            if (player && player.setVolume && currentMuteStatus === "0") player.setVolume(100); 
+        };
+
+        msg.onerror = function(e) {
+            console.error("SpeechSynthesis Error:", e);
+            if (player && player.setVolume && currentMuteStatus === "0") player.setVolume(100);
+        };
+
+        // Paksa suara dimainkan segera
+        window.speechSynthesis.cancel(); 
         window.speechSynthesis.speak(msg);
     }
 
@@ -137,10 +159,19 @@
         return (match && match[7].length == 11) ? match[7] : "77ZozI0rw7w";
     }
 
+    // PEMBAIKAN 3: "Prime" audio semasa klik MULA
     function initTV() {
         if(systemReady) return;
         document.getElementById('overlay').style.display = 'none';
         systemReady = true;
+        
+        // Segarkan semula senarai suara
+        loadVoices();
+        
+        // "Unlock" Speech Synthesis pada Smart TV dengan suara senyap
+        const unlockMsg = new SpeechSynthesisUtterance("");
+        window.speechSynthesis.speak(unlockMsg);
+
         if (player) {
             player.playVideo();
             if (currentMuteStatus === "0") { player.unMute(); player.setVolume(100); } else { player.mute(); }
@@ -190,4 +221,3 @@
 </script>
 </body>
 </html>
-
