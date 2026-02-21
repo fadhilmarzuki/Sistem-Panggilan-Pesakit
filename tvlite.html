@@ -232,12 +232,13 @@
         }
 
         .blink {
-            animation: blinker 0.8s linear 4;
+            animation: blinker 0.6s linear 5;
         }
 
         @keyframes blinker {
             50% {
-                opacity: 0.2;
+                opacity: 0.1;
+                background-color: #e74c3c;
             }
         }
     </style>
@@ -246,7 +247,7 @@
 <body>
 
     <div id="overlay">
-        <h1 style="color:white; margin-bottom:10px;">SISTEM PANGGILAN KK BAS</h1>
+        <h1 style="color:white; margin-bottom:10px;">SISTEM PANGGILAN PESAKIT</h1>
         <p style="color:white; opacity:0.8; margin-bottom:30px;">Tekan butang 'OK' atau 'ENTER' pada remote untuk mula
         </p>
         <button id="startBtn" onclick="initTV()" autofocus>MULA PAPARAN TV</button>
@@ -259,6 +260,9 @@
         <div class="header-right">
             <div id="tvTime">00:00:00</div>
             <div id="tvDate">Memuatkan...</div>
+            <div id="statusDot"
+                style="width:10px; height:10px; background:red; border-radius:50%; margin-top:5px; border:1px solid white;">
+            </div>
         </div>
     </div>
 
@@ -295,8 +299,6 @@
         const db = firebase.database();
 
         let malayVoice, systemReady = false;
-        let lastCalledNum = "";
-        let lastCallTime = 0;
 
         window.onload = function () {
             document.getElementById('startBtn').focus();
@@ -373,6 +375,7 @@
         function initTV() {
             if (systemReady) return;
             document.getElementById('overlay').style.display = 'none';
+            document.getElementById('statusDot').style.background = '#27ae60'; // Green = Ready
             systemReady = true;
 
             const warmup = new SpeechSynthesisUtterance("");
@@ -391,27 +394,24 @@
 
         db.ref('queue_system/current_calling').on('value', snap => {
             const d = snap.val();
-            if (d && systemReady) {
-                // RECALL DETECTION: Check number OR timestamp
-                if (d.number !== lastCalledNum || d.timestamp !== lastCallTime) {
-                    lastCalledNum = d.number;
-                    lastCallTime = d.timestamp;
+            if (!d) return;
 
-                    document.getElementById('tvNum').innerText = d.number;
-                    document.getElementById('tvRoom').innerText = d.room;
+            // Sentiasa kemaskini teks di skrin
+            document.getElementById('tvNum').innerText = d.number;
+            document.getElementById('tvRoom').innerText = d.room;
 
-                    const card = document.getElementById('callCard');
-                    if (card) {
-                        card.classList.remove('blink');
-                        void card.offsetWidth;
-                        card.classList.add('blink');
-                    }
-
-                    if (d.number !== "---") {
-                        playAlert();
-                        setTimeout(() => announce(d.number, d.room), 1200);
-                    }
+            if (systemReady && d.number !== "---") {
+                // Trigger Animasi Berkelip
+                const card = document.getElementById('callCard');
+                if (card) {
+                    card.classList.remove('blink');
+                    void card.offsetWidth;
+                    card.classList.add('blink');
                 }
+
+                // Trigger Suara & Alert
+                playAlert();
+                setTimeout(() => announce(d.number, d.room), 1000);
             }
         });
 
