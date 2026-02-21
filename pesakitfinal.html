@@ -14,7 +14,7 @@
         .status-box { padding: 25px; border-radius: 15px; margin-top: 20px; font-weight: bold; font-size: 24px; }
         .waiting { background: #fff3cd; color: #856404; }
         .called { background: #d4edda; color: #155724; animation: pulse 1.5s infinite; }
-        .completed-box { background: #e8f0fe; color: #1967d2; border: 2px solid #1a73e8; }
+        .completed-box { background: #e8f0fe; color: #1a73e8; border: 2px solid #1a73e8; }
         
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
         
@@ -22,13 +22,14 @@
         .btn-primary { width: 100%; padding: 20px; background: #1a73e8; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 18px; margin-bottom: 10px; }
         .btn-secondary { width: 100%; padding: 15px; background: #34495e; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 16px; }
         
-        /* Star Rating Styles */
         .rating-section { margin-top: 25px; padding: 20px; background: #f8f9fa; border-radius: 15px; display: none; }
         .stars { display: flex; justify-content: center; gap: 8px; margin: 15px 0; font-size: 45px; cursor: pointer; }
         .star { color: #ddd; transition: 0.2s; }
         .star.selected { color: #f1c40f; }
 
-        #comingBtn { background: #e67e22; color: white; border: none; padding: 20px; border-radius: 12px; font-weight: bold; font-size: 18px; margin-top: 20px; width: 100%; }
+        #comingBtn { background: #e67e22; color: white; border: none; padding: 20px; border-radius: 12px; font-weight: bold; font-size: 18px; margin-top: 20px; width: 100%; cursor: pointer; transition: 0.3s; }
+        #comingBtn:disabled { background: #bdc3c7; cursor: not-allowed; transform: scale(0.98); }
+        
         .info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: #f8f9fa; padding: 10px; border-radius: 8px; }
         .info-label { color: #7f8c8d; font-size: 14px; }
         .info-val { font-weight: bold; font-size: 20px; }
@@ -62,11 +63,11 @@
         
         <div id="statusIndicator" class="status-box waiting">
             <div id="statusLabel">Menunggu...</div>
-            <div id="roomLabel" style="font-weight:normal; font-size:16px; margin-top:5px;">Sila tunggu panggilan doktor</div>
+            <div id="roomLabel" style="font-weight:normal; font-size:16px; margin-top:5px;">Sila tunggu nombor anda dipanggil...</div>
         </div>
 
         <div id="ratingSection" class="rating-section">
-            <p style="font-weight:bold; color:#2c3e50; font-size:18px;">Bagaimana pengalaman anda?</p>
+            <p style="font-weight:bold; color:#2c3e50; font-size:18px;">Bagaimana pengalaman anda hari ini?</p>
             <div class="stars" id="starContainer">
                 <span class="star" data-value="1">★</span><span class="star" data-value="2">★</span><span class="star" data-value="3">★</span><span class="star" data-value="4">★</span><span class="star" data-value="5">★</span>
             </div>
@@ -78,8 +79,8 @@
             <div class="info-row"><span class="info-label">Baki Menunggu:</span><span id="remainingCount" class="info-val" style="color:#1a73e8">0</span></div>
         </div>
 
-        <button id="comingBtn" style="display:none;" onclick="notifyDoctor()">SAYA MENUJU KE SANA</button>
-        <div class="instruction-note">⚠️ JANGAN TUTUP LAMAN INI</div>
+        <button id="comingBtn" style="display:none;" onclick="notifyDoctor()">MAKLUMKAN ANDA SEDANG MENUJU KE SANA</button>
+        <div class="instruction-note" id="warningNote">⚠️ JANGAN TUTUP LAMAN INI</div>
         <button style="background:transparent; color:#7f8c8d; border:none; text-decoration:underline; margin-top:30px;" onclick="location.reload()">Tukar Nombor / IC</button>
     </div>
 </div>
@@ -143,38 +144,58 @@
             const roomLabel = document.getElementById('roomLabel');
             const ratingSec = document.getElementById('ratingSection');
             const queueDetails = document.getElementById('queueDetails');
+            const warningNote = document.getElementById('warningNote');
+            const btn = document.getElementById('comingBtn');
 
-            // LOGIK SESI SELESAI
             if(data.status === "completed") {
                 indicator.className = "status-box completed-box";
                 label.innerText = "SESI SELESAI";
                 roomLabel.innerText = "Terima kasih atas kunjungan anda.";
                 ratingSec.style.display = "block";
                 queueDetails.style.display = "none";
-                document.getElementById('comingBtn').style.display = "none";
+                warningNote.style.display = "none";
+                btn.style.display = "none";
                 setupRating(num, data.service, data.calledBy);
             } 
             else if(data.status === "called") {
                 ratingSec.style.display = "none";
                 queueDetails.style.display = "none";
-                document.getElementById('comingBtn').style.display = "block";
+                warningNote.style.display = "block";
+                btn.style.display = "block";
+                
+                // LOGIK PERUBAHAN BUTANG BERDASARKAN DATABASE
+                if(data.isComing === true) {
+                    btn.innerText = "DOKTOR TELAH DIMAKLUMKAN";
+                    btn.disabled = true;
+                } else {
+                    btn.innerText = "SAYA MENUJU KE SANA";
+                    btn.disabled = false;
+                }
+
                 indicator.className = "status-box called";
                 label.innerText = "GILIRAN ANDA!";
+                
                 if(data.lastRecall && (initialLoad || data.lastRecall !== currentLocalLastRecall)) {
                     currentLocalLastRecall = data.lastRecall; initialLoad = false; playSound();
                 } else if(initialLoad) { initialLoad = false; playSound(); }
+
                 db.ref('queue_system/current_calling').once('value', c => {
-                    const cd = c.val(); if(cd && cd.number === num) roomLabel.innerText = "Lokasi: " + cd.room;
+                    const cd = c.val(); 
+                    if(cd && cd.number === num) roomLabel.innerText = "Sila ke " + cd.room;
                 });
-            } else {
+            } 
+            else {
                 ratingSec.style.display = "none";
                 queueDetails.style.display = "block";
-                document.getElementById('comingBtn').style.display = "none";
+                warningNote.style.display = "block";
+                btn.style.display = "none";
                 indicator.className = "status-box waiting";
                 label.innerText = "Menunggu...";
-                roomLabel.innerText = "Sila tunggu panggilan doktor";
+                roomLabel.innerText = "Sila tunggu nombor anda dipanggil...";
+                
                 db.ref('queue_system/current_calling').on('value', c => {
-                    const cd = c.val(); if(cd && cd.service === data.service) document.getElementById('currentNumVal').innerText = cd.number;
+                    const cd = c.val(); 
+                    if(cd && cd.service === data.service) document.getElementById('currentNumVal').innerText = cd.number;
                 });
                 db.ref('queue_system/waiting_list').orderByChild('status').equalTo('waiting').on('value', list => {
                     let count = 0; list.forEach(child => { if(child.val().service === data.service && child.val().timestamp < data.timestamp) count++; });
@@ -199,7 +220,15 @@
     }
 
     function playSound() { const audio = document.getElementById('alertSound'); audio.currentTime = 0; audio.play().catch(e => {}); if(window.navigator.vibrate) window.navigator.vibrate([300, 100, 300]); }
-    function notifyDoctor() { const num = document.getElementById('myNumDisplay').innerText; db.ref('queue_system/waiting_list/' + num).update({ isComing: true }); }
+    
+    // FUNGSI NOTIFY DOKTOR DENGAN MAKLUM BALAS SEGERA
+    function notifyDoctor() { 
+        const btn = document.getElementById('comingBtn');
+        btn.innerText = "SEDANG DIHANTAR...";
+        btn.disabled = true; // Elakkan klik berganda
+        const num = document.getElementById('myNumDisplay').innerText; 
+        db.ref('queue_system/waiting_list/' + num).update({ isComing: true }); 
+    }
 </script>
 </body>
 </html>
