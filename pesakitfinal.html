@@ -2,21 +2,55 @@
 <html lang="ms">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Status Pesakit - SPGP JKN Kedah</title>
     <style>
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; margin: 0; padding: 20px; display: flex; justify-content: center; }
-        .container { width: 100%; max-width: 450px; }
-        .card { background: white; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; margin-bottom: 20px; width: 100%; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: #f0f4f8; 
+            margin: 0; 
+            padding: 10px; /* Padding dikurangkan sedikit untuk telefon */
+            display: flex; 
+            justify-content: center; 
+            min-height: 100vh;
+        }
+        
+        /* Container dibuat fleksibel */
+        .container { 
+            width: 100%; 
+            max-width: 450px; /* Kekal saiz asal untuk desktop */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card { 
+            background: white; 
+            padding: 25px; 
+            border-radius: 25px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+            text-align: center; 
+            margin-bottom: 20px; 
+            width: 100%; 
+        }
+
         .welcome-header { color: #1a73e8; font-size: 20px; font-weight: bold; margin-bottom: 20px; display: block; line-height: 1.3; }
-        .big-text { font-size: 65px; font-weight: 900; color: #2c3e50; margin: 10px 0; }
+        
+        /* Kekalkan saiz asal 65px tetapi fleksibel mengikut skrin */
+        .big-text { 
+            font-size: clamp(45px, 15vw, 65px); 
+            font-weight: 900; 
+            color: #2c3e50; 
+            margin: 10px 0; 
+        }
+
         .status-box { padding: 20px; border-radius: 15px; margin-top: 20px; font-weight: bold; }
         .waiting { background: #fff3cd; color: #856404; }
         .called { background: #d4edda; color: #155724; animation: pulse 1.5s infinite; }
+        
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
         
-        input { width: 100%; padding: 15px; border-radius: 12px; border: 2px solid #ddd; text-align: center; font-size: 20px; margin-bottom: 15px; }
+        input { width: 100%; padding: 15px; border-radius: 12px; border: 2px solid #ddd; text-align: center; font-size: 18px; margin-bottom: 15px; }
         .btn-primary { width: 100%; padding: 15px; background: #1a73e8; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 18px; margin-bottom: 10px; }
         .btn-secondary { width: 100%; padding: 12px; background: #34495e; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 16px; }
         
@@ -36,32 +70,30 @@
 
 <div class="container">
     <div class="card" id="loginView">
-        <h1 id="dispClinicName" style="font-size: 24px; color: #2c3e50;">Klinik Kesihatan</h1>
+        <h1 id="dispClinicName" style="font-size: 22px; color: #2c3e50; margin: 0;">Klinik Kesihatan</h1>
         
         <div id="manualInput">
-            <p style="margin-top: 20px; color: #7f8c8d;">Pilihan 1: Masukkan No. Giliran</p>
+            <p style="margin-top: 20px; color: #7f8c8d; font-size: 15px;">Pilihan 1: Masukkan No. Giliran</p>
             <input type="text" id="inputNum" placeholder="Contoh: A-001">
             <button class="btn-primary" onclick="checkStatus()">MULA PANTAU</button>
 
             <div class="divider"><span>ATAU</span></div>
 
-            <p style="color: #7f8c8d;">Pilihan 2: Semak Guna No. IC</p>
+            <p style="color: #7f8c8d; font-size: 15px;">Pilihan 2: Semak Guna No. IC</p>
             <input type="text" id="inputIC" placeholder="Masukkan No. IC Anda">
             <button class="btn-secondary" onclick="checkByIC()">CARI NOMBOR SAYA</button>
         </div>
 
         <div id="qrWelcome" style="display:none;">
-            <p>Nombor giliran dikesan:</p>
-            <div id="detectedNum" style="font-size: 55px; font-weight: 900; color: #1a73e8; margin: 15px 0;">---</div>
+            <p>Nombor Giliran Dikesan:</p>
+            <div id="detectedNum" class="big-text" style="color:#1a73e8;">---</div>
             <button class="btn-primary" onclick="checkStatus()" style="background:#27ae60;">AKTIFKAN NOTIFIKASI</button>
-            <p style="font-size:13px; color:#e74c3c; margin-top:15px; font-weight:bold;">
-                Wajib tekan butang di atas untuk aktifkan suara & getaran panggilan.
-            </p>
+            <p style="font-size:13px; color:#e74c3c; margin-top:15px; font-weight:bold;">Sila tekan butang hijau untuk mula.</p>
         </div>
     </div>
 
     <div class="card" id="statusView" style="display:none;">
-        <div class="welcome-header" id="welcomeMsg">Selamat Datang Ke...</div>
+        <div class="welcome-header" id="welcomeMsg">Status Giliran</div>
         <div style="color: #7f8c8d; font-size: 14px;">NOMBOR ANDA:</div>
         <div id="myNumDisplay" class="big-text">---</div>
         
@@ -84,11 +116,11 @@
         <button id="comingBtn" style="display:none;" onclick="notifyDoctor()">SAYA SEDANG MENUJU KE SANA</button>
         
         <div class="instruction-note">
-            ⚠️ <b>Peringatan:</b> Sila pastikan tab ini kekal terbuka agar anda tetap menerima notifikasi panggilan.
+            ⚠️ <b>Jangan tutup laman ini</b> untuk kekal menerima notifikasi getaran.
         </div>
         
-        <div style="margin-top: 30px;">
-            <button style="background:transparent; color:#7f8c8d; border:none; text-decoration:underline; cursor:pointer;" onclick="location.reload()">Tukar Nombor / IC</button>
+        <div style="margin-top: 25px;">
+            <button style="background:transparent; color:#7f8c8d; border:none; text-decoration:underline; cursor:pointer; font-size: 14px;" onclick="location.reload()">Tukar Nombor / IC</button>
         </div>
     </div>
 </div>
@@ -109,10 +141,7 @@
 
     db.ref('queue_system/settings').on('value', snap => {
         const s = snap.val();
-        if(s) { 
-            document.getElementById('dispClinicName').innerText = s.clinic_name; 
-            document.getElementById('welcomeMsg').innerText = "Selamat Datang Ke " + s.clinic_name; 
-        }
+        if(s) { document.getElementById('dispClinicName').innerText = s.clinic_name; }
     });
 
     window.onload = function() {
@@ -126,32 +155,26 @@
         }
     };
 
-    // FUNGSI SEMAKAN GUNA IC
     function checkByIC() {
         const ic = document.getElementById('inputIC').value.trim();
         if(!ic) return alert("Sila masukkan No. IC!");
-
         db.ref('queue_system/waiting_list').orderByChild('ic').equalTo(ic).once('value', snap => {
             if(snap.exists()) {
                 let foundNo = "";
-                snap.forEach(child => { foundNo = child.key; }); // Ambil nombor giliran terkini
+                snap.forEach(child => { foundNo = child.key; });
                 document.getElementById('inputNum').value = foundNo;
-                checkStatus(); // Terus jalankan pemantauan
-            } else {
-                alert("Tiada rekod giliran dijumpai untuk No. IC ini bagi hari ini.");
-            }
+                checkStatus();
+            } else { alert("Maaf, rekod tidak dijumpai."); }
         });
     }
 
     function checkStatus() {
         const num = document.getElementById('inputNum').value.toUpperCase().trim();
         if(!num) return;
-
         const audio = document.getElementById('alertSound');
         audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(e => {});
-
         db.ref('queue_system/waiting_list/' + num).once('value', (snap) => {
-            if (!snap.exists()) { alert("Nombor giliran tidak sah!"); return; }
+            if (!snap.exists()) { alert("Nombor tidak sah!"); return; }
             document.getElementById('loginView').style.display = 'none';
             document.getElementById('statusView').style.display = 'block';
             document.getElementById('myNumDisplay').innerText = num;
@@ -163,31 +186,23 @@
         db.ref('queue_system/waiting_list/' + num).on('value', (snap) => {
             const data = snap.val();
             if(!data) return;
-
             if(data.status === "called") {
                 document.getElementById('queueDetails').style.display = 'none';
-                const btn = document.getElementById('comingBtn');
-                btn.style.display = 'block';
-                
+                document.getElementById('comingBtn').style.display = 'block';
                 if(!data.isComing) {
-                    btn.innerText = "SAYA SEDANG MENUJU KE SANA";
-                    btn.disabled = false;
-                    btn.style.background = "#e67e22";
+                    document.getElementById('comingBtn').innerText = "SAYA MENUJU KE SANA";
+                    document.getElementById('comingBtn').disabled = false;
+                    document.getElementById('comingBtn').style.background = "#e67e22";
                 } else {
-                    btn.innerText = "MAKLUMAN DIHANTAR";
-                    btn.disabled = true;
-                    btn.style.background = "#bdc3c7";
+                    document.getElementById('comingBtn').innerText = "MAKLUMAN DIHANTAR";
+                    document.getElementById('comingBtn').disabled = true;
+                    document.getElementById('comingBtn').style.background = "#bdc3c7";
                 }
-
                 document.getElementById('statusIndicator').className = "status-box called";
                 document.getElementById('statusLabel').innerText = "GILIRAN ANDA!";
-                
                 if(data.lastRecall && (initialLoad || data.lastRecall !== currentLocalLastRecall)) {
                     currentLocalLastRecall = data.lastRecall; initialLoad = false; playSound();
-                } else if(initialLoad) {
-                    initialLoad = false; playSound();
-                }
-
+                } else if(initialLoad) { initialLoad = false; playSound(); }
                 db.ref('queue_system/current_calling').once('value', c => {
                     const cd = c.val();
                     if(cd && cd.number === num) document.getElementById('roomLabel').innerText = "Lokasi: " + cd.room;
@@ -200,12 +215,10 @@
                 document.getElementById('statusIndicator').className = "status-box waiting";
                 document.getElementById('statusLabel').innerText = "Menunggu...";
                 document.getElementById('roomLabel').innerText = "Sila tunggu panggilan doktor";
-
                 db.ref('queue_system/current_calling').on('value', c => {
                     const cd = c.val();
                     if(cd && cd.service === data.service) document.getElementById('currentNumVal').innerText = cd.number;
                 });
-
                 db.ref('queue_system/waiting_list').orderByChild('status').equalTo('waiting').on('value', list => {
                     let count = 0;
                     list.forEach(child => { if(child.val().service === data.service && child.val().timestamp < data.timestamp) count++; });
