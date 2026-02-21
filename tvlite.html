@@ -1,169 +1,461 @@
 <!DOCTYPE html>
 <html lang="ms">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Paparan TV Lite - SPGP JKN Kedah</title>
+    <title>Paparan Klinik Kesihatan - Premium TV</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #0c1427;
-            --card-bg: #162447;
-            --accent-yellow: #f1c40f;
-            --text-white: #ffffff;
-            --primary-blue: #1a73e8;
+            --primary: #0061ff;
+            --secondary: #60efff;
+            --accent: #f1c40f;
+            --bg: #050a18;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 212, 212, 0.1);
         }
 
-        body, html { 
-            margin: 0; padding: 0; height: 100%; overflow: hidden;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-white);
-        }
-
-        /* HEADER: Nama Klinik & Jam */
-        .header {
-            height: 12vh;
-            background: var(--primary-blue);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 40px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-        #clinicName { font-size: 3.5vw; font-weight: 900; text-transform: uppercase; }
-        #liveClock { font-size: 2.5vw; font-weight: bold; }
-
-        /* KANDUNGAN UTAMA */
-        .main-container {
-            display: flex;
-            height: 76vh;
-            padding: 20px;
-            gap: 20px;
+        * {
             box-sizing: border-box;
         }
 
-        /* BAHAGIAN PANGGILAN SEMASA (BESAR) */
-        .current-call {
-            flex: 2;
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Outfit', sans-serif;
+            background: radial-gradient(circle at top right, #1a2a4a, #050a18);
+            color: white;
+        }
+
+        /* HEADER */
+        .header {
+            height: 15vh;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 4vw;
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid var(--glass-border);
+        }
+
+        .clinic-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo-placeholder {
+            width: 60px;
+            height: 60px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: var(--primary);
+            font-weight: 900;
+        }
+
+        #clinicName {
+            font-size: 3.2vw;
+            font-weight: 900;
+            letter-spacing: -1px;
+            text-transform: uppercase;
+        }
+
+        .date-time {
+            text-align: right;
+        }
+
+        #liveTime {
+            font-size: 3.5vw;
+            font-weight: 900;
+            color: var(--accent);
+            line-height: 1;
+        }
+
+        #liveDate {
+            font-size: 1.4vw;
+            opacity: 0.8;
+            font-weight: 500;
+        }
+
+        /* MAIN CONTENT */
+        .content {
+            height: 75vh;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        /* CALL CARD (LEFT) */
+        .call-card {
             background: var(--card-bg);
-            border-radius: 25px;
+            backdrop-filter: blur(20px);
+            border: 2px solid var(--glass-border);
+            border-radius: 40px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            border: 5px solid var(--primary-blue);
             position: relative;
+            overflow: hidden;
         }
-        .label-now { font-size: 3vw; color: var(--primary-blue); font-weight: bold; margin-bottom: 10px; }
-        #displayNum { font-size: 20vw; font-weight: 900; color: var(--accent-yellow); line-height: 1; }
-        #displayRoom { font-size: 5vw; font-weight: bold; background: var(--primary-blue); padding: 10px 60px; border-radius: 50px; margin-top: 20px; }
 
-        /* FOOTER: Running Message */
-        .footer-marquee {
-            height: 12vh;
-            background: #000;
+        .call-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(96, 239, 255, 0.05) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .label-now {
+            font-size: 2.2vw;
+            font-weight: 700;
+            color: var(--secondary);
+            margin-bottom: 0px;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            opacity: 0.8;
+        }
+
+        #displayNum {
+            font-size: 15vw;
+            font-weight: 900;
+            color: white;
+            line-height: 1;
+            text-shadow: 0 0 50px rgba(96, 239, 255, 0.3);
+        }
+
+        #displayRoom {
+            font-size: 4vw;
+            font-weight: 900;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            padding: 15px 80px;
+            border-radius: 100px;
+            box-shadow: 0 10px 40px rgba(0, 97, 255, 0.4);
+            margin-top: 10px;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        /* HISTORY (RIGHT) */
+        .history-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 2px solid var(--glass-border);
+            border-radius: 40px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .history-title {
+            font-size: 1.8vw;
+            font-weight: 900;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--glass-border);
+            text-align: center;
+            color: var(--secondary);
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+
+        .history-item {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 10px 20px;
+            border-radius: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--glass-border);
+            transition: 0.3s;
+        }
+
+        .h-num {
+            font-size: 2.2vw;
+            font-weight: 900;
+            color: white;
+        }
+
+        .h-room {
+            font-size: 1vw;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            background: rgba(241, 196, 15, 0.1);
+            padding: 5px 12px;
+            border-radius: 8px;
+        }
+
+        /* FOOTER */
+        .footer {
+            height: 10vh;
+            background: rgba(0, 0, 0, 0.4);
             display: flex;
             align-items: center;
-            border-top: 4px solid var(--accent-yellow);
+            border-top: 4px solid var(--primary);
+            position: relative;
         }
-        marquee { font-size: 4vw; font-weight: bold; color: var(--text-white); }
 
-        /* OVERLAY MULA (Selesaikan isu Audio Smart TV) */
-        #overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); display: flex; justify-content: center;
-            align-items: center; z-index: 1000; cursor: pointer;
+        .marquee-box {
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
         }
+
+        .marquee-content {
+            display: inline-block;
+            padding-left: 100%;
+            font-size: 3vw;
+            font-weight: 700;
+            animation: marquee 30s linear infinite;
+        }
+
+        @keyframes marquee {
+            0% {
+                transform: translate(0, 0);
+            }
+
+            100% {
+                transform: translate(-100%, 0);
+            }
+        }
+
+        /* OVERLAY */
+        #overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+        }
+
         .btn-start {
-            padding: 30px 80px; font-size: 40px; font-weight: bold;
-            background: var(--primary-blue); color: white; border: none; border-radius: 15px;
+            padding: 30px 100px;
+            font-size: 40px;
+            font-weight: 900;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 0 50px rgba(0, 97, 255, 0.4);
+            transition: 0.3s;
+        }
+
+        .btn-start:hover {
+            transform: scale(1.05);
+            filter: brightness(1.2);
+        }
+
+        .pulse {
+            animation: pulse-glow 1s infinite alternate;
+        }
+
+        @keyframes pulse-glow {
+            from {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            to {
+                transform: scale(1.02);
+                opacity: 0.9;
+            }
         }
     </style>
 </head>
+
 <body>
 
-    <div id="overlay" onclick="startSystem()">
-        <button class="btn-start">KLIK UNTUK MULA</button>
+    <div id="overlay">
+        <h1 style="font-size: 3vw; margin-bottom: 20px;">SISTEM PANGGILAN KLINIK</h1>
+        <button class="btn-start" onclick="startSystem()">MULA PAPARAN TV</button>
+        <p style="opacity:0.5; font-size: 1.2vw;">Tekan butang di atas atau 'ENTER' untuk aktifkan audio</p>
     </div>
 
     <div class="header">
-        <div id="clinicName">Klinik Kesihatan</div>
-        <div id="liveClock">--:--:--</div>
-    </div>
-
-    <div class="main-container">
-        <div class="current-call">
-            <div class="label-now">NOMBOR GILIRAN</div>
-            <div id="displayNum">---</div>
-            <div id="displayRoom">Sedia</div>
+        <div class="clinic-info">
+            <div id="clinicName">Klinik Kesihatan</div>
+        </div>
+        <div class="date-time">
+            <div id="liveTime">00:00:00</div>
+            <div id="liveDate">Memuatkan Tarikh...</div>
         </div>
     </div>
 
-    <div class="footer-marquee">
-        <marquee id="marqueeText">Selamat Datang ke Sistem Pengurusan Giliran Pesakit (SPGP)</marquee>
+    <div class="content">
+        <div class="call-card">
+            <div class="label-now">GILIRAN SEKARANG</div>
+            <div id="displayNum" class="pulse">---</div>
+            <div id="displayRoom">SEDIA</div>
+        </div>
+
+        <div class="history-card">
+            <div class="history-title">GILIRAN SEBELUM INI</div>
+            <div id="historyList" class="history-list">
+                <!-- Data dari Firebase -->
+            </div>
+        </div>
     </div>
 
-    <audio id="callSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+    <div class="footer">
+        <div class="marquee-box">
+            <div class="marquee-content" id="marqueeText">Selamat Datang ke Sistem Pengurusan Giliran Pesakit (SPGP).
+                Sila tunggu sehingga nombor anda dipanggil.</div>
+        </div>
+    </div>
+
+    <audio id="alertSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"
+        preload="auto"></audio>
 
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     <script>
-        const firebaseConfig = { 
-            apiKey: "AIzaSyBRK634U8ER_ZFOi1SV9nu8McndUWdD-rg", 
-            databaseURL: "https://sistem-panggilan-pelanggan-default-rtdb.asia-southeast1.firebasedatabase.app" 
+        const firebaseConfig = {
+            apiKey: "AIzaSyBRK634U8ER_ZFOi1SV9nu8McndUWdD-rg",
+            databaseURL: "https://sistem-panggilan-pelanggan-default-rtdb.asia-southeast1.firebasedatabase.app"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let lastNum = "";
+        let malayVoice, systemReady = false, lastCalledNum = "";
 
-        // Jam dan Tarikh masa nyata
+        // UI Updates
         function updateClock() {
             const now = new Date();
-            const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-            const timeStr = now.toLocaleTimeString('ms-MY', { hour12: true });
-            const dateStr = now.toLocaleDateString('ms-MY', options);
-            document.getElementById('liveClock').innerText = dateStr + " | " + timeStr;
+            document.getElementById('liveTime').innerText = now.toLocaleTimeString('ms-MY', { hour12: true }).toUpperCase();
+            document.getElementById('liveDate').innerText = now.toLocaleDateString('ms-MY', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
         }
         setInterval(updateClock, 1000);
+        updateClock();
 
-        // Ambil tetapan klinik dan mesej marquee
+        // Voices Logic
+        function loadVoices() {
+            const voices = window.speechSynthesis.getVoices();
+            malayVoice = voices.find(v =>
+                v.lang.includes('ms-MY') || v.name.includes('Zira') ||
+                v.name.includes('Google Bahasa Melayu') || v.lang.includes('id-ID')
+            );
+        }
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+        loadVoices();
+
+        function toMalayWords(text, spellOut = true) {
+            const map = {
+                '0': 'kosong', '1': 'satu', '2': 'dua', '3': 'tiga', '4': 'empat',
+                '5': 'lima', '6': 'enam', '7': 'tujuh', '8': 'lapan', '9': 'sembilan'
+            };
+            if (spellOut) {
+                let chars = text.toString().split('');
+                return chars.map((char, index) => {
+                    let word = map[char] || char;
+                    return (index === 0 && isNaN(char)) ? word + ' , ' : word;
+                }).join(' ');
+            } else {
+                return text.toString().toLowerCase().replace(/[0-9]/g, (digit) => ' ' + map[digit] + ' ');
+            }
+        }
+
+        function announce(num, room) {
+            if (!systemReady) return;
+            const malayNum = toMalayWords(num, true);
+            const malayRoom = toMalayWords(room, false);
+            const msg = new SpeechSynthesisUtterance(`Nombor, ${malayNum}. Sila ke ${malayRoom}.`);
+            if (malayVoice) { msg.voice = malayVoice; msg.lang = malayVoice.lang; }
+            else { msg.lang = 'ms-MY'; }
+            msg.rate = 0.85;
+            window.speechSynthesis.speak(msg);
+        }
+
+        function playAlert() {
+            const sound = document.getElementById('alertSound');
+            sound.currentTime = 0;
+            sound.play().catch(e => console.log("Audio trigger blocked"));
+        }
+
+        // Firebase Listeners
         db.ref('queue_system/settings').on('value', snap => {
             const s = snap.val();
-            if(s) {
-                document.getElementById('clinicName').innerText = s.clinic_name || "Klinik Kesihatan";
-                document.getElementById('marqueeText').innerText = s.message || "Selamat Datang";
+            if (s) {
+                document.getElementById('clinicName').innerText = s.clinic_name || "KLINIK KESIHATAN";
+                document.getElementById('marqueeText').innerText = s.message || "Selamat Datang ke Klinik Kesihatan.";
             }
         });
 
-        // Pantau panggilan nombor secara masa nyata
         db.ref('queue_system/current_calling').on('value', snap => {
             const data = snap.val();
-            if(data) {
-                const num = data.number || "---";
-                const room = data.room || "Sedia";
-                
-                document.getElementById('displayNum').innerText = num;
-                document.getElementById('displayRoom').innerText = room;
+            if (data && data.number !== lastCalledNum) {
+                lastCalledNum = data.number;
+                document.getElementById('displayNum').innerText = data.number;
+                document.getElementById('displayRoom').innerText = data.room;
 
-                // Mainkan bunyi jika nombor berubah atau masa panggilan baru dikesan
-                if(num !== lastNum && num !== "---") {
-                    playNotification();
-                    lastNum = num;
+                if (systemReady) {
+                    playAlert();
+                    setTimeout(() => announce(data.number, data.room), 1500);
                 }
             }
         });
 
-        function playNotification() {
-            const sound = document.getElementById('callSound');
-            sound.currentTime = 0;
-            sound.play().catch(e => console.log("Audio sekat:", e));
-        }
+        db.ref('queue_system/waiting_list').on('value', snap => {
+            const list = snap.val(); if (!list) return;
+            const historyData = Object.keys(list).map(k => ({ number: k, ...list[k] }))
+                .filter(i => i.status === 'called')
+                .sort((a, b) => b.timestamp - a.timestamp)
+                .slice(0, 5);
+
+            const grid = document.getElementById('historyList');
+            grid.innerHTML = "";
+            historyData.forEach(i => {
+                grid.innerHTML += `<div class="history-item">
+                    <div class="h-num">${i.number}</div>
+                    <div class="h-room">${i.calledBy || 'BILIK'}</div>
+                </div>`;
+            });
+        });
 
         function startSystem() {
             document.getElementById('overlay').style.display = 'none';
-            playNotification(); // Test audio trigger
+            systemReady = true;
+            // Warm-up
+            const warmup = new SpeechSynthesisUtterance("");
+            window.speechSynthesis.speak(warmup);
+            playAlert();
         }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !systemReady) startSystem();
+        });
     </script>
 </body>
+
 </html>
