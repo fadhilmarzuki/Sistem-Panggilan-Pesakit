@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paparan TV Lite - SPGP JKN Kedah</title>
+    <style>
+        :root {
+            --bg-color: #0c1427;
+            --card-bg: #162447;
+            --accent-yellow: #f1c40f;
+            --text-white: #ffffff;
+            --primary-blue: #1a73e8;
+        }
+
+        body, html { 
+            margin: 0; padding: 0; height: 100%; overflow: hidden;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-white);
+        }
+
+        /* HEADER: Nama Klinik & Jam */
+        .header {
+            height: 12vh;
+            background: var(--primary-blue);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 40px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        #clinicName { font-size: 3.5vw; font-weight: 900; text-transform: uppercase; }
+        #liveClock { font-size: 2.5vw; font-weight: bold; }
+
+        /* KANDUNGAN UTAMA */
+        .main-container {
+            display: flex;
+            height: 76vh;
+            padding: 20px;
+            gap: 20px;
+            box-sizing: border-box;
+        }
+
+        /* BAHAGIAN PANGGILAN SEMASA (BESAR) */
+        .current-call {
+            flex: 2;
+            background: var(--card-bg);
+            border-radius: 25px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: 5px solid var(--primary-blue);
+            position: relative;
+        }
+        .label-now { font-size: 3vw; color: var(--primary-blue); font-weight: bold; margin-bottom: 10px; }
+        #displayNum { font-size: 20vw; font-weight: 900; color: var(--accent-yellow); line-height: 1; }
+        #displayRoom { font-size: 5vw; font-weight: bold; background: var(--primary-blue); padding: 10px 60px; border-radius: 50px; margin-top: 20px; }
+
+        /* FOOTER: Running Message */
+        .footer-marquee {
+            height: 12vh;
+            background: #000;
+            display: flex;
+            align-items: center;
+            border-top: 4px solid var(--accent-yellow);
+        }
+        marquee { font-size: 4vw; font-weight: bold; color: var(--text-white); }
+
+        /* OVERLAY MULA (Selesaikan isu Audio Smart TV) */
+        #overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); display: flex; justify-content: center;
+            align-items: center; z-index: 1000; cursor: pointer;
+        }
+        .btn-start {
+            padding: 30px 80px; font-size: 40px; font-weight: bold;
+            background: var(--primary-blue); color: white; border: none; border-radius: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="overlay" onclick="startSystem()">
+        <button class="btn-start">KLIK UNTUK MULA</button>
+    </div>
+
+    <div class="header">
+        <div id="clinicName">Klinik Kesihatan</div>
+        <div id="liveClock">--:--:--</div>
+    </div>
+
+    <div class="main-container">
+        <div class="current-call">
+            <div class="label-now">NOMBOR GILIRAN</div>
+            <div id="displayNum">---</div>
+            <div id="displayRoom">Sedia</div>
+        </div>
+    </div>
+
+    <div class="footer-marquee">
+        <marquee id="marqueeText">Selamat Datang ke Sistem Pengurusan Giliran Pesakit (SPGP)</marquee>
+    </div>
+
+    <audio id="callSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    <script>
+        const firebaseConfig = { 
+            apiKey: "AIzaSyBRK634U8ER_ZFOi1SV9nu8McndUWdD-rg", 
+            databaseURL: "https://sistem-panggilan-pelanggan-default-rtdb.asia-southeast1.firebasedatabase.app" 
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let lastNum = "";
+
+        // Jam dan Tarikh masa nyata
+        function updateClock() {
+            const now = new Date();
+            const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+            const timeStr = now.toLocaleTimeString('ms-MY', { hour12: true });
+            const dateStr = now.toLocaleDateString('ms-MY', options);
+            document.getElementById('liveClock').innerText = dateStr + " | " + timeStr;
+        }
+        setInterval(updateClock, 1000);
+
+        // Ambil tetapan klinik dan mesej marquee
+        db.ref('queue_system/settings').on('value', snap => {
+            const s = snap.val();
+            if(s) {
+                document.getElementById('clinicName').innerText = s.clinic_name || "Klinik Kesihatan";
+                document.getElementById('marqueeText').innerText = s.message || "Selamat Datang";
+            }
+        });
+
+        // Pantau panggilan nombor secara masa nyata
+        db.ref('queue_system/current_calling').on('value', snap => {
+            const data = snap.val();
+            if(data) {
+                const num = data.number || "---";
+                const room = data.room || "Sedia";
+                
+                document.getElementById('displayNum').innerText = num;
+                document.getElementById('displayRoom').innerText = room;
+
+                // Mainkan bunyi jika nombor berubah atau masa panggilan baru dikesan
+                if(num !== lastNum && num !== "---") {
+                    playNotification();
+                    lastNum = num;
+                }
+            }
+        });
+
+        function playNotification() {
+            const sound = document.getElementById('callSound');
+            sound.currentTime = 0;
+            sound.play().catch(e => console.log("Audio sekat:", e));
+        }
+
+        function startSystem() {
+            document.getElementById('overlay').style.display = 'none';
+            playNotification(); // Test audio trigger
+        }
+    </script>
+</body>
+</html>
