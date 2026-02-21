@@ -31,6 +31,10 @@
         .avg-rating-box { text-align: center; padding: 20px; background: #f8f9fa; border-radius: 15px; margin-bottom: 20px; border: 1px solid #eee; }
         .avg-val { font-size: 50px; font-weight: 900; color: #f1c40f; line-height: 1; }
         .rating-item { padding: 10px; border-bottom: 1px solid #f1f1f1; display: flex; justify-content: space-between; font-size: 14px; }
+        
+        .btn-reset-rating { padding: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; transition: 0.3s; margin-top: 10px; }
+        .btn-reset-today { background: #e67e22; }
+        .btn-reset-all { background: #e74c3c; }
     </style>
 </head>
 <body>
@@ -92,16 +96,37 @@
 
     <div id="sec-penilaian" class="card" style="display:none;">
         <h2>Analisis Penilaian Pesakit</h2>
-        <div style="display:flex; gap:10px; margin-bottom:20px;">
-            <select id="filterService" onchange="loadRatings()"><option value="">Semua Unit</option></select>
-            <select id="filterRoom" onchange="loadRatings()"><option value="">Semua Bilik</option></select>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:20px;">
+            <div>
+                <label style="margin-top:0">Tarikh:</label>
+                <input type="date" id="filterDate" onchange="loadRatings()">
+            </div>
+            <div>
+                <label style="margin-top:0">Unit:</label>
+                <select id="filterService" onchange="loadRatings()"><option value="">Semua Unit</option></select>
+            </div>
+            <div>
+                <label style="margin-top:0">Bilik:</label>
+                <select id="filterRoom" onchange="loadRatings()"><option value="">Semua Bilik</option></select>
+            </div>
         </div>
+
         <div class="avg-rating-box">
             <div style="font-size:14px; color:#7f8c8d;">PURATA BINTANG</div>
             <div id="avgRating" class="avg-val">0.0</div>
             <div id="totalVotes" style="color:#7f8c8d; font-size:12px;">0 maklum balas</div>
         </div>
-        <div id="ratingList" style="max-height:300px; overflow-y:auto; border:1px solid #eee; border-radius:10px; padding:10px;"></div>
+        
+        <div id="ratingList" style="max-height:300px; overflow-y:auto; border:1px solid #eee; border-radius:10px; padding:10px; background: #fff;"></div>
+
+        <div style="margin-top: 25px; padding-top: 15px; border-top: 2px dashed #ddd;">
+            <h3 style="font-size: 16px; color: #e74c3c;">Pengurusan Data Penilaian</h3>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="confirmResetRatings('today')" class="btn-reset-rating btn-reset-today">RESET HARI INI SAHAJA</button>
+                <button onclick="confirmResetRatings('all')" class="btn-reset-rating btn-reset-all">RESET KESELURUHAN DATA</button>
+            </div>
+        </div>
     </div>
 
     <div class="footer">Hak Cipta Terpelihara &copy; 2026 Unit NCD JKN Kedah</div>
@@ -151,7 +176,6 @@
         }
     });
 
-    // KEMASKINI FUNGSI SHOWSECTION
     function showSection(t) {
         document.getElementById('sec-pendaftaran').style.display = t === 'pendaftaran' ? 'block' : 'none';
         document.getElementById('sec-tetapan').style.display = t === 'tetapan' ? 'block' : 'none';
@@ -159,30 +183,56 @@
         document.getElementById('tab1').className = t === 'pendaftaran' ? 'tab-btn active-tab' : 'tab-btn';
         document.getElementById('tab2').className = t === 'tetapan' ? 'tab-btn active-tab' : 'tab-btn';
         document.getElementById('tab3').className = t === 'penilaian' ? 'tab-btn active-tab' : 'tab-btn';
-        if(t === 'penilaian') { updateRatingFilters(); loadRatings(); }
+        if(t === 'penilaian') { 
+            // Tetapkan tarikh hari ini secara automatik apabila tab dibuka
+            if(!document.getElementById('filterDate').value) {
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('filterDate').value = today;
+            }
+            updateRatingFilters(); 
+            loadRatings(); 
+        }
     }
 
-    /* --- LOGIK BARU UNTUK RATING --- */
     function updateRatingFilters() {
         const sS = document.getElementById('filterService'); const rS = document.getElementById('filterRoom');
+        const currentS = sS.value; const currentR = rS.value;
         sS.innerHTML = '<option value="">Semua Unit</option>'; rS.innerHTML = '<option value="">Semua Bilik</option>';
         db.ref('queue_system/settings').once('value', snap => {
             const s = snap.val(); if(s) {
                 (s.services || []).forEach(v => { if(v.name) sS.innerHTML += `<option value="${v.name}">${v.name}</option>`; });
                 (s.rooms || []).forEach(r => { if(r) rS.innerHTML += `<option value="${r}">${r}</option>`; });
+                sS.value = currentS; rS.value = currentR;
             }
         });
     }
 
     function loadRatings() {
-        const selS = document.getElementById('filterService').value; const selR = document.getElementById('filterRoom').value;
+        const selS = document.getElementById('filterService').value; 
+        const selR = document.getElementById('filterRoom').value;
+        const selD = document.getElementById('filterDate').value;
+
+        // Logik Range Masa Tarikh
+        let startTs = 0;
+        let endTs = Infinity;
+        if(selD) {
+            const d = new Date(selD);
+            d.setHours(0,0,0,0);
+            startTs = d.getTime();
+            d.setHours(23,59,59,999);
+            endTs = d.getTime();
+        }
+
         db.ref('queue_system/ratings').on('value', snap => {
             let total = 0; let count = 0; const list = document.getElementById('ratingList'); list.innerHTML = "";
             snap.forEach(child => {
                 const r = child.val();
-                if((!selS || r.service === selS) && (!selR || r.room === selR)) {
+                const withinDate = r.timestamp >= startTs && r.timestamp <= endTs;
+                
+                if(withinDate && (!selS || r.service === selS) && (!selR || r.room === selR)) {
                     total += r.rating; count++;
-                    list.innerHTML = `<div class="rating-item"><div><b>${"★".repeat(r.rating)}</b><br><small>${r.service} @ ${r.room}</small></div><div>No: ${r.number}</div></div>` + list.innerHTML;
+                    const dateStr = new Date(r.timestamp).toLocaleTimeString('ms-MY', {hour:'2-digit', minute:'2-digit'});
+                    list.innerHTML = `<div class="rating-item"><div><b>${"★".repeat(r.rating)}</b><br><small>${r.service} @ ${r.room} (${dateStr})</small></div><div>No: ${r.number}</div></div>` + list.innerHTML;
                 }
             });
             document.getElementById('avgRating').innerText = count > 0 ? (total / count).toFixed(1) : "0.0";
@@ -190,7 +240,24 @@
         });
     }
 
-    // FUNGSI DAFTAR, SEMAK, SIMPAN & RESET (Kekal Asal)
+    function confirmResetRatings(type) {
+        const msg = type === 'today' ? "AWAS: Padam penilaian HARI INI sahaja?" : "AMARAN: Padam KESELURUHAN rekod penilaian?";
+        if(!confirm(msg)) return;
+
+        if(type === 'all') {
+            db.ref('queue_system/ratings').remove().then(() => alert("Semua data dipadam."));
+        } else {
+            const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
+            const timestampStart = startOfToday.getTime();
+            db.ref('queue_system/ratings').once('value', snap => {
+                let countDeleted = 0;
+                snap.forEach(child => { if(child.val().timestamp >= timestampStart) { child.ref.remove(); countDeleted++; } });
+                alert("Selesai: " + countDeleted + " rekod dipadam.");
+            });
+        }
+    }
+
+    /* --- FUNGSI ASAL LAIN --- */
     function daftarPesakit() {
         const ic = document.getElementById('patientIC').value.trim(); const serviceName = document.getElementById('regService').value;
         if(!ic || !serviceName) return alert("Sila lengkapkan!");
