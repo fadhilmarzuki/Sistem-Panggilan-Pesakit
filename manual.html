@@ -31,29 +31,42 @@
         h3 { color: var(--primary-blue); border-left: 6px solid var(--primary-blue); padding-left: 15px; margin-top: 40px; text-transform: uppercase; }
         p, li { text-align: justify; font-size: 16px; }
         
-        /* Schematic Diagram */
-        .schematic-box { background: #f8f9fa; border: 2px solid #e0e6ed; padding: 30px; border-radius: 20px; margin: 30px 0; text-align: center; }
-        .flow-container { display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 20px; }
-        .flow-step { background: white; border: 2px solid var(--primary-blue); padding: 20px; border-radius: 15px; width: 220px; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-
-        /* GAYA UNTUK MINI POSTER (PREVIEW ONLINE) */
-        .poster-preview-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; margin-top: 20px; }
-        .mini-poster {
-            border: 8px solid #eee;
-            padding: 20px;
+        /* SKEMATIK KETERSAMBUNGAN */
+        .schematic-box { 
+            background: #f8f9fa; 
+            border: 2px solid #e0e6ed; 
+            padding: 30px; 
+            border-radius: 20px; 
+            margin: 30px 0; 
             text-align: center;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-            display: flex; flex-direction: column; align-items: center;
+            page-break-inside: avoid;
         }
-        .m-green { border-color: var(--success-green); }
-        .m-orange { border-color: var(--warning-orange); }
-        .m-purple { border-color: var(--purple-pesakit); }
-        .mini-header { font-size: 14px; font-weight: bold; color: var(--dark-blue); line-height: 1.2; }
+        .flow-container { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            gap: 15px; 
+            margin-bottom: 15px;
+        }
+        .flow-step { 
+            background: white; 
+            padding: 15px; 
+            border-radius: 12px; 
+            width: 200px; 
+            font-size: 14px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05); 
+            border: 2px solid var(--primary-blue);
+        }
+        .pesakit-box { border-color: var(--purple-pesakit) !important; margin: 0 auto; }
+        .v-arrow { font-size: 30px; color: #bdc3c7; margin: 10px 0; line-height: 1; }
+
+        /* Preview Posters Online */
+        .poster-preview-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; margin-top: 20px; }
+        .mini-poster { border: 8px solid #eee; padding: 20px; text-align: center; background: white; border-radius: 12px; display: flex; flex-direction: column; align-items: center; }
         .mini-title { font-size: 28px; font-weight: 900; margin: 15px 0; text-transform: uppercase; }
-        .mini-instruction { font-size: 16px; font-weight: bold; color: #2c3e50; margin-top: 15px; }
         .qr-placeholder-mini { margin: 10px auto; }
+        /* Style untuk Logo di Preview Online */
+        .poster-logo { width: 60px; height: auto; margin-bottom: 10px; }
 
         /* Tables */
         .ts-table { width: 100%; border-collapse: collapse; margin-top: 25px; }
@@ -65,32 +78,17 @@
         .dos { background: #eafaf1; border-color: var(--success-green); }
         .donts { background: #fdedec; border-color: var(--danger-red); }
 
-        /* GAYA UNTUK POSTER PDF (FULL SIZE) - Tersembunyi di Screen */
         .printable-poster { display: none; }
 
-        /* PRINT CONFIGURATION */
         @media print {
             @page { size: A4 portrait; margin: 15mm; }
             body { background: white; padding: 0; }
             .container { width: 100%; box-shadow: none; padding: 0; }
-            /* Sembunyikan elemen navigasi dan preview mini semasa mencetak */
             .nav-ui, .intro-text-poster, .poster-preview-grid { display: none; }
             .page-break { page-break-before: always; }
-            
-            /* Tampilkan Poster Sebenar dalam PDF (Full Size A4) */
-            .printable-poster { 
-                display: flex !important; 
-                flex-direction: column; 
-                align-items: center; 
-                text-align: center; 
-                height: 260mm; 
-                border: 15px solid #eee;
-                padding: 40px;
-                box-sizing: border-box;
-                justify-content: center;
-                background: white;
-            }
-            .poster-label { font-size: 20px; font-weight: bold; color: var(--dark-blue); }
+            .printable-poster { display: flex !important; flex-direction: column; align-items: center; text-align: center; height: 260mm; border: 15px solid #eee; padding: 40px; box-sizing: border-box; justify-content: center; background: white; }
+            /* Style untuk Logo di Print PDF (Lebih Besar) */
+            .poster-logo { width: 100px; margin-bottom: 15px; }
             .poster-title { font-size: 55px; font-weight: 900; margin: 40px 0; text-transform: uppercase; }
             .qr-placeholder { margin: 40px 0; }
         }
@@ -111,36 +109,60 @@
     </header>
 
     <section>
-        <h3>1. Pengenalan & Objektif</h3>
-        <p><b>Sistem Pengurusan Giliran Pesakit (SPGP)</b> adalah inovasi digital yang menghubungkan kaunter pendaftaran, bilik konsultasi, dan pesakit secara masa nyata. Objektif utama merangkumi digitalisasi aliran kerja, meningkatkan kepuasan pelanggan melalui pemantauan giliran fleksibel, serta mengurangkan penggunaan kertas sepenuhnya.</p>
+        <h3>1. Pengenalan Sistem</h3>
+        <p><b>Sistem Pengurusan Giliran Pesakit (SPGP)</b> merupakan inovasi digital untuk menguruskan aliran pesakit di klinik secara efisien dan moden. Sistem ini menghubungkan stesen pendaftaran, bilik konsultasi doktor, dan pelanggan melalui peranti elektronik secara <i>real-time</i>.</p>
     </section>
 
     <section>
-        <h3>2. Kelebihan SPGP</h3>
+        <h3>2. Objektif Pembangunan</h3>
         <ul>
-            <li><b>Mesra Alam (Paperless):</b> Pendaftaran menggunakan imbasan QR Code sepenuhnya.</li>
-            <li><b>Notifikasi Pintar:</b> Telefon pesakit akan bergetar dan berbunyi apabila giliran dipanggil.</li>
-            <li><b>Mobiliti Doktor:</b> Doktor boleh memanggil pesakit menggunakan komputer atau telefon pintar.</li>
+            <li><b>Digitalisasi Aliran Kerja:</b> Menggantikan sistem manual berasaskan kertas kepada sistem digital.</li>
+            <li><b>Meningkatkan Kepuasan Pelanggan:</b> Membolehkan pesakit memantau giliran secara fleksibel di telefon.</li>
+            <li><b>Ketepatan Data:</b> Menyediakan statistik baki menunggu secara langsung.</li>
+            <li><b>Optimasi Peranti:</b> Menggunakan peranti sedia ada yang mempunyai sambungan internet.</li>
+        </ul>
+    </section>
+
+    <section>
+        <h3>3. Kelebihan SPGP</h3>
+        <ul>
+            <li><b>Paperless:</b> Pendaftaran menggunakan imbasan QR Code sepenuhnya.</li>
+            <li><b>Notifikasi Pintar:</b> Telefon pesakit akan bergetar dan berbunyi apabila dipanggil.</li>
+            <li><b>Panggilan Manual:</b> Fleksibiliti untuk doktor memanggil nombor di luar turutan jika perlu.</li>
             <li><b>Carian IC:</b> Memudahkan petugas mencari semula nombor pesakit yang hilang.</li>
         </ul>
     </section>
 
     <section>
-        <h3>3. Skematik Ketersambungan Stesen</h3>
+        <h3>4. Keperluan Sistem</h3>
+        <p>Untuk prestasi optimum, pastikan perkara berikut tersedia:</p>
+        <ul>
+            <li><b>Internet:</b> Sambungan stabil untuk akses pangkalan data Firebase.</li>
+            <li><b>Pelayar Web:</b> Digalakkan menggunakan Google Chrome atau Microsoft Edge versi terkini.</li>
+            <li><b>Peranti:</b> PC untuk pendaftaran, telefon/PC untuk doktor, dan Smart TV untuk ruang menunggu.</li>
+        </ul>
+    </section>
+
+    <section>
+        <h3>5. Skematik Ketersambungan Stesen</h3>
         <div class="schematic-box">
             <div class="flow-container">
-                <div class="flow-step"><b style="color:var(--success-green)">KAUNTER DAFTAR</b><br>Daftar IC & Jana QR.</div>
-                <div style="font-size:24px;">➜</div>
-                <div class="flow-step"><b style="color:var(--warning-orange)">PANEL DOKTOR</b><br>Panggil pesakit & urus bilik.</div>
-                <div style="font-size:24px;">➜</div>
-                <div class="flow-step"><b style="color:var(--primary-blue)">RUANG MENUNGGU</b><br>Pengumuman suara Smart TV.</div>
+                <div class="flow-step" style="border-color: var(--success-green);"><b style="color:var(--success-green)">KAUNTER DAFTAR</b><br>Daftar IC & Jana QR.</div>
+                <div style="font-size:24px; color:#bdc3c7;">➜</div>
+                <div class="flow-step" style="border-color: var(--warning-orange);"><b style="color:var(--warning-orange)">PANEL DOKTOR</b><br>Panggil pesakit & urus bilik.</div>
+                <div style="font-size:24px; color:#bdc3c7;">➜</div>
+                <div class="flow-step" style="border-color: var(--primary-blue);"><b style="color:var(--primary-blue)">RUANG MENUNGGU</b><br>Pengumuman Smart TV.</div>
             </div>
-            <p style="margin-top:30px; font-weight:bold; color:#9b59b6;">PERANTI PESAKIT (SMARTPHONE) <br> <span style="font-weight:normal; font-size:12px;">Pantau status secara langsung melalui telefon masing-masing</span></p>
+            <div class="v-arrow">⬇</div>
+            <div class="flow-step pesakit-box">
+                <b style="color:var(--purple-pesakit)">PERANTI PESAKIT (SMARTPHONE)</b><br>
+                Pantau status secara langsung melalui telefon masing-masing.
+            </div>
         </div>
     </section>
 
     <section>
-        <h3>4. Panduan Operasi (Dos & Don'ts)</h3>
+        <h3>6. Panduan Operasi (Dos & Don'ts)</h3>
         <div class="box dos">
             <b>✅ THE DOS:</b> Lakukan <i>Daily Reset</i> setiap pagi; Klik butang "MULA" di TV untuk aktifkan suara; Gunakan fungsi Semakan IC jika pesakit lupa nombor.
         </div>
@@ -150,91 +172,89 @@
     </section>
 
     <section>
-        <h3>5. Penyelesaian Masalah (Troubleshooting)</h3>
+        <h3>7. Penyelesaian Masalah (Troubleshooting)</h3>
         <table class="ts-table">
             <thead>
                 <tr><th style="width:30%;">Masalah</th><th>Langkah Penyelesaian</th></tr>
             </thead>
             <tbody>
-                <tr><td>TV tiada suara panggilan</td><td>Klik skrin TV atau butang "MULA". Browser menyekat audio automatik.</td></tr>
-                <tr><td>Video YouTube Error 153</td><td>Video tersebut disekat untuk "Embedding". Gunakan pautan video lain.</td></tr>
+                <tr><td>TV tiada suara panggilan</td><td>Klik skrin TV atau butang "MULA". Pelayar menyekat audio automatik.</td></tr>
+                <tr><td>Video YouTube Error 153</td><td>Video tersebut disekat untuk "Embedding". Guna pautan video lain.</td></tr>
                 <tr><td>Telefon tidak bergetar</td><td>Wajib menggunakan sambungan <b>HTTPS</b> (URL GitHub rasmi).</td></tr>
-                <tr><td>Pesakit hilang nombor</td><td>Gunakan fungsi <b>Semakan IC</b> menggunakan No. IC di kaunter daftar.</td></tr>
-                <tr><td>Panggilan manual gagal</td><td>Pastikan format nombor betul (Contoh: A-001) dan doktor telah pilih Bilik.</td></tr>
+                <tr><td>Pesakit hilang nombor</td><td>Gunakan fungsi <b>Semakan IC</b> di kaunter daftar.</td></tr>
+                <tr><td>Panggilan manual gagal</td><td>Pastikan format nombor betul (Contoh: A-001) dan pilih bilik.</td></tr>
+                <tr><td>Statistik tidak tepat</td><td>Pastikan doktor tekan "Selesai" selepas konsultasi.</td></tr>
+                <tr><td>QR Code ralat</td><td>Semak pautan GitHub dalam kod sumber daftar.</td></tr>
+                <tr><td>Marquee tidak muncul</td><td>Isi mesej di tab Tetapan dan klik Simpan.</td></tr>
             </tbody>
         </table>
     </section>
 
     <section class="intro-text-poster">
-        <h3>6. Poster QR Code Stesen (Sedia Cetak)</h3>
-        <p>Di bawah adalah pratinjau poster sebenar. Anda boleh klik kanan pada imej QR Code untuk menyimpannya terus. Untuk cetakan saiz penuh A4, sila gunakan butang "MUAT TURUN PDF" di atas.</p>
-        
+        <h3>8. Poster QR Code Stesen (Pratinjau)</h3>
         <div class="poster-preview-grid">
             <div class="mini-poster m-green">
-                <div class="mini-header">KEMENTERIAN KESIHATAN MALAYSIA<br>JKN KEDAH</div>
-                <div class="mini-title" style="color: var(--success-green);">KAUNTER DAFTAR</div>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Coat_of_arms_of_Malaysia.svg/250px-Coat_of_arms_of_Malaysia.svg.png" class="poster-logo" alt="Jata Negara">
+                <div class="mini-header">KEMENTERIAN KESIHATAN MALAYSIA<br>JABATAN KESIHATAN NEGERI KEDAH</div>
+                <div class="mini-title" style="color:var(--success-green); font-size:20px;">KAUNTER DAFTAR</div>
                 <div id="preview-qr1" class="qr-placeholder-mini"></div>
-                <div class="mini-instruction">IMBAS UNTUK PENDAFTARAN</div>
             </div>
             <div class="mini-poster m-orange">
-                <div class="mini-header">KEMENTERIAN KESIHATAN MALAYSIA<br>JKN KEDAH</div>
-                <div class="mini-title" style="color: var(--warning-orange);">PANEL DOKTOR</div>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Coat_of_arms_of_Malaysia.svg/250px-Coat_of_arms_of_Malaysia.svg.png" class="poster-logo" alt="Jata Negara">
+                <div class="mini-header">KEMENTERIAN KESIHATAN MALAYSIA<br>JABATAN KESIHATAN NEGERI KEDAH</div>
+                <div class="mini-title" style="color:var(--warning-orange); font-size:20px;">PANEL DOKTOR</div>
                 <div id="preview-qr2" class="qr-placeholder-mini"></div>
-                <div class="mini-instruction">IMBAS UNTUK PANGGILAN</div>
             </div>
             <div class="mini-poster m-purple">
-                <div class="mini-header">KEMENTERIAN KESIHATAN MALAYSIA<br>JKN KEDAH</div>
-                <div class="mini-title" style="color: var(--purple-pesakit);">SEMAKAN PESAKIT</div>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Coat_of_arms_of_Malaysia.svg/250px-Coat_of_arms_of_Malaysia.svg.png" class="poster-logo" alt="Jata Negara">
+                <div class="mini-header">KEMENTERIAN KESIHATAN MALAYSIA<br>JABATAN KESIHATAN NEGERI KEDAH</div>
+                <div class="mini-title" style="color:var(--purple-pesakit); font-size:20px;">SEMAKAN PESAKIT</div>
                 <div id="preview-qr3" class="qr-placeholder-mini"></div>
-                <div class="mini-instruction">IMBAS UNTUK SEMAK STATUS</div>
             </div>
         </div>
     </section>
 
-    <footer style="text-align: center; margin-top: 50px; color: #bdc3c7; font-size: 13px;">
+    <footer style="text-align: center; margin-top: 40px; color: #bdc3c7; font-size: 13px;">
         Hak Cipta Terpelihara &copy; 2026 Unit NCD JKN Kedah
     </footer>
 
     <div class="printable-poster page-break" style="border-color: var(--success-green);">
-        <div class="poster-label">KEMENTERIAN KESIHATAN MALAYSIA<br>JKN KEDAH</div>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Coat_of_arms_of_Malaysia.svg/250px-Coat_of_arms_of_Malaysia.svg.png" class="poster-logo" alt="Jata Negara">
+        <div class="poster-label">KEMENTERIAN KESIHATAN MALAYSIA<br>JABATAN KESIHATAN NEGERI KEDAH</div>
         <div class="poster-title" style="color: var(--success-green);">KAUNTER DAFTAR</div>
         <div id="qr1" class="qr-placeholder"></div>
         <div style="font-size: 22px; font-weight: bold;">IMBAS UNTUK PENDAFTARAN PESAKIT</div>
-        <div style="margin-top:40px; color:#7f8c8d;">Sistem Pengurusan Giliran Pesakit (SPGP) 2026</div>
+        <div style="margin-top:40px; color:#7f8c8d;">Sistem Pengurusan Giliran Pesakit (SPGP) 2026 <br>Hak Cipta Terpelihara Unit NCD JKN Kedah 2026</div>
     </div>
 
     <div class="printable-poster page-break" style="border-color: var(--warning-orange);">
-        <div class="poster-label">KEMENTERIAN KESIHATAN MALAYSIA<br>JKN KEDAH</div>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Coat_of_arms_of_Malaysia.svg/250px-Coat_of_arms_of_Malaysia.svg.png" class="poster-logo" alt="Jata Negara">
+        <div class="poster-label">KEMENTERIAN KESIHATAN MALAYSIA<br>JABATAN KESIHATAN NEGERI KEDAH</div>
         <div class="poster-title" style="color: var(--warning-orange);">PANEL DOKTOR</div>
         <div id="qr2" class="qr-placeholder"></div>
         <div style="font-size: 22px; font-weight: bold;">IMBAS UNTUK PANGGILAN PESAKIT</div>
-        <div style="margin-top:40px; color:#7f8c8d;">Sistem Pengurusan Giliran Pesakit (SPGP) 2026</div>
+        <div style="margin-top:40px; color:#7f8c8d;">Sistem Pengurusan Giliran Pesakit (SPGP) 2026 <br>Hak Cipta Terpelihara Unit NCD JKN Kedah 2026</div>
     </div>
 
     <div class="printable-poster page-break" style="border-color: var(--purple-pesakit);">
-        <div class="poster-label">KEMENTERIAN KESIHATAN MALAYSIA<br>JKN KEDAH</div>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Coat_of_arms_of_Malaysia.svg/250px-Coat_of_arms_of_Malaysia.svg.png" class="poster-logo" alt="Jata Negara">
+        <div class="poster-label">KEMENTERIAN KESIHATAN MALAYSIA<br>JABATAN KESIHATAN NEGERI KEDAH</div>
         <div class="poster-title" style="color: var(--purple-pesakit);">SEMAKAN PESAKIT</div>
         <div id="qr3" class="qr-placeholder"></div>
         <div style="font-size: 22px; font-weight: bold;">IMBAS UNTUK SEMAK STATUS GILIRAN</div>
         <div style="margin-top: 20px;">Sila masukkan No. IC jika anda terlupa nombor anda.</div>
-        <div style="margin-top:40px; color:#7f8c8d;">Sistem Pengurusan Giliran Pesakit (SPGP) 2026</div>
+        <div style="margin-top:40px; color:#7f8c8d;">Sistem Pengurusan Giliran Pesakit (SPGP) 2026 <br>Hak Cipta Terpelihara Unit NCD JKN Kedah 2026</div>
     </div>
-
 </div>
 
 <script>
     const baseURL = "https://fadhilmarzuki.github.io/Sistem-Panggilan-Pesakit/";
-    
-    // JANA QR UNTUK PDF (SAIZ BESAR)
     new QRCode(document.getElementById("qr1"), { text: baseURL + "daftarfinal.html", width: 320, height: 320 });
     new QRCode(document.getElementById("qr2"), { text: baseURL + "doktorfinal.html", width: 320, height: 320 });
     new QRCode(document.getElementById("qr3"), { text: baseURL + "pesakitfinal.html", width: 320, height: 320 });
-
-    // JANA QR UNTUK PREVIEW MINI (SAIZ KECIL)
-    new QRCode(document.getElementById("preview-qr1"), { text: baseURL + "daftarfinal.html", width: 180, height: 180 });
-    new QRCode(document.getElementById("preview-qr2"), { text: baseURL + "doktorfinal.html", width: 180, height: 180 });
-    new QRCode(document.getElementById("preview-qr3"), { text: baseURL + "pesakitfinal.html", width: 180, height: 180 });
+    new QRCode(document.getElementById("preview-qr1"), { text: baseURL + "daftarfinal.html", width: 140, height: 140 });
+    new QRCode(document.getElementById("preview-qr2"), { text: baseURL + "doktorfinal.html", width: 140, height: 140 });
+    new QRCode(document.getElementById("preview-qr3"), { text: baseURL + "pesakitfinal.html", width: 140, height: 140 });
 </script>
-
 </body>
 </html>
