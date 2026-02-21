@@ -25,6 +25,8 @@
             flex-direction: column; 
             align-items: center; 
             border: 2px solid transparent;
+            height: 100%; /* Pastikan kotak sama tinggi */
+            box-sizing: border-box;
         }
         
         .btn-card:hover { transform: translateY(-10px); border-color: #1a73e8; box-shadow: 0 15px 30px rgba(26,115,232,0.15); }
@@ -36,8 +38,9 @@
         .daftar { border-top: 6px solid #27ae60; }
         .doktor { border-top: 6px solid #e67e22; }
         .tv { border-top: 6px solid #1a73e8; }
+        .tv-lite { border-top: 6px solid #3498db; } /* Biru cerah untuk versi Lite */
         .pesakit { border-top: 6px solid #9b59b6; }
-        .manual { border-top: 6px solid #34495e; } /* Warna kelabu gelap untuk manual */
+        .manual { border-top: 6px solid #34495e; }
     </style>
 </head>
 <body>
@@ -63,6 +66,12 @@
             <div class="icon">📺</div>
             <div class="label">PAPARAN SMART TV</div>
             <div class="desc">Hebahan panggilan suara & paparan video YouTube</div>
+        </a>
+
+        <a href="tvlite.html" class="btn-card tv-lite">
+            <div class="icon">⚡</div>
+            <div class="label">PAPARAN TV LITE</div>
+            <div class="desc">Versi pantas tanpa YouTube untuk Smart TV lama/perlahan</div>
         </a>
 
         <a href="pesakitfinal.html" class="btn-card pesakit">
