@@ -252,7 +252,7 @@
 <body>
 
     <div id="overlay">
-        <h1 style="color:white; margin-bottom:10px;">SISTEM PENGURUSAN GILIRAN PESAKIT (SPGP)</h1>
+        <h1 style="color:white; margin-bottom:10px;">SISTEM PANGGILAN KK BAS</h1>
         <p style="color:white; opacity:0.8; margin-bottom:30px;">Tekan butang 'OK' atau 'ENTER' pada remote untuk mula
         </p>
         <button id="startBtn" onclick="initTV()" autofocus>MULA PAPARAN TV</button>
@@ -260,7 +260,7 @@
 
     <div class="header-container">
         <div class="header-left">
-            <div id="clinicName">KK</div>
+            <div id="clinicName">KK BAS</div>
         </div>
         <div class="header-right">
             <div id="tvTime">00:00:00</div>
@@ -317,18 +317,17 @@
             if (!systemReady) initTV();
         });
 
+        // Robust Youtube Initialization
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('ytPlayer', {
-                height: '100%',
-                width: '100%',
+                height: '100%', width: '100%',
                 playerVars: {
-                    'autoplay': 1,
-                    'mute': 1,
-                    'loop': 1,
-                    'controls': 0,
-                    'rel': 0,
-                    'modestbranding': 1,
-                    'playlist': currentVideoID
+                    'autoplay': 1, 'mute': 1, 'loop': 1, 'controls': 0,
+                    'rel': 0, 'modestbranding': 1,
+                    // Use the latest IDs detected from Firebase (even if received before API ready)
+                    'list': currentPlaylistID || undefined,
+                    'listType': currentPlaylistID ? 'playlist' : undefined,
+                    'playlist': currentPlaylistID ? undefined : currentVideoID
                 },
                 events: {
                     'onReady': onPlayerReady,
@@ -344,11 +343,9 @@
         function onPlayerStateChange(event) {
             if (event.data === YT.PlayerState.ENDED) {
                 if (currentPlaylistID) {
-                    const currentIndex = player.getPlaylistIndex();
-                    const playlist = player.getPlaylist();
-                    if (currentIndex === playlist.length - 1) {
-                        player.playVideoAt(0);
-                    }
+                    const idx = player.getPlaylistIndex();
+                    const list = player.getPlaylist();
+                    if (idx === list.length - 1) player.playVideoAt(0);
                 } else {
                     player.playVideo();
                 }
@@ -358,20 +355,15 @@
         function loadVoices() {
             const voices = window.speechSynthesis.getVoices();
             malayVoice = voices.find(v =>
-                v.lang.includes('ms-MY') ||
-                v.name.includes('Zira') ||
-                v.name.includes('Google Bahasa Melayu') ||
-                v.lang.includes('id-ID')
+                v.lang.includes('ms-MY') || v.name.includes('Zira') ||
+                v.name.includes('Google Bahasa Melayu') || v.lang.includes('id-ID')
             );
         }
         window.speechSynthesis.onvoiceschanged = loadVoices;
         loadVoices();
 
         function toMalayWords(text, spellOut = true) {
-            const map = {
-                '0': 'kosong', '1': 'satu', '2': 'dua', '3': 'tiga', '4': 'empat',
-                '5': 'lima', '6': 'enam', '7': 'tujuh', '8': 'lapan', '9': 'sembilan'
-            };
+            const map = { '0': 'kosong', '1': 'satu', '2': 'dua', '3': 'tiga', '4': 'empat', '5': 'lima', '6': 'enam', '7': 'tujuh', '8': 'lapan', '9': 'sembilan' };
             if (spellOut) {
                 let chars = text.toString().split('');
                 return chars.map((char, index) => {
@@ -385,38 +377,21 @@
 
         function playAlert() {
             const sound = document.getElementById('alertSound');
-            if (sound) {
-                sound.currentTime = 0;
-                sound.play().catch(e => console.log("Audio trigger blocked"));
-            }
+            if (sound) { sound.currentTime = 0; sound.play().catch(e => console.log("Audio block")); }
         }
 
         function announce(num, room) {
             if (!systemReady) return;
-
             if (player && currentMuteStatus == "0") player.setVolume(20);
-
-            const malayNum = toMalayWords(num, true);
-            const malayRoom = toMalayWords(room, false);
-            const msg = new SpeechSynthesisUtterance(`Nombor, ${malayNum}. Sila ke ${malayRoom}.`);
-
-            if (malayVoice) {
-                msg.voice = malayVoice;
-                msg.lang = malayVoice.lang;
-            } else {
-                msg.lang = 'ms-MY';
-            }
-
+            const msg = new SpeechSynthesisUtterance(`Nombor, ${toMalayWords(num, true)}. Sila ke ${toMalayWords(room, false)}.`);
+            if (malayVoice) { msg.voice = malayVoice; msg.lang = malayVoice.lang; } else { msg.lang = 'ms-MY'; }
             msg.rate = 0.85;
-            msg.onend = function () {
-                if (player && currentMuteStatus == "0") player.setVolume(100);
-            };
+            msg.onend = () => { if (player && currentMuteStatus == "0") player.setVolume(100); };
             window.speechSynthesis.speak(msg);
         }
 
         function fitClinicName() {
-            const parent = document.querySelector('.header-left');
-            const child = document.getElementById('clinicName');
+            const parent = document.querySelector('.header-left'), child = document.getElementById('clinicName');
             if (!parent || !child) return;
             let fontSize = 55; child.style.fontSize = fontSize + "px";
             while ((child.scrollHeight > parent.clientHeight - 20 || child.scrollWidth > parent.clientWidth - 50) && fontSize > 25) {
@@ -425,15 +400,13 @@
         }
 
         function extractIDs(url) {
-            let vID = ""; let pID = "";
+            let vID = "", pID = "";
             try {
                 const urlObj = new URL(url);
                 if (urlObj.hostname.includes('youtube.com')) {
-                    vID = urlObj.searchParams.get('v') || "";
-                    pID = urlObj.searchParams.get('list') || "";
+                    vID = urlObj.searchParams.get('v') || ""; pID = urlObj.searchParams.get('list') || "";
                 } else if (urlObj.hostname.includes('youtu.be')) {
-                    vID = urlObj.pathname.substring(1) || "";
-                    pID = urlObj.searchParams.get('list') || "";
+                    vID = urlObj.pathname.substring(1) || ""; pID = urlObj.searchParams.get('list') || "";
                 }
             } catch (e) { }
             return { videoId: vID, playlistId: pID };
@@ -443,12 +416,10 @@
             if (systemReady) return;
             document.getElementById('overlay').style.display = 'none';
             systemReady = true;
-            const warmup = new SpeechSynthesisUtterance("");
-            window.speechSynthesis.speak(warmup);
+            window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
             if (player) {
                 player.playVideo();
-                if (currentMuteStatus == "0") { player.unMute(); player.setVolume(100); }
-                else { player.mute(); }
+                if (currentMuteStatus == "0") { player.unMute(); player.setVolume(100); } else { player.mute(); }
             }
         }
 
@@ -462,19 +433,21 @@
                 const ids = extractIDs(s.youtube_link);
                 currentMuteStatus = s.sound_mute !== undefined ? s.sound_mute : "1";
 
-                if (player) {
-                    // Force refresh video whenever link settings are updated
-                    if (ids.playlistId && ids.playlistId !== currentPlaylistID) {
-                        currentPlaylistID = ids.playlistId;
+                // Track IDs immediately for race condition fix
+                const playlistChanged = ids.playlistId && ids.playlistId !== currentPlaylistID;
+                const videoChanged = ids.videoId && !ids.playlistId && ids.videoId !== currentVideoID;
+
+                if (ids.playlistId) currentPlaylistID = ids.playlistId;
+                if (ids.videoId) currentVideoID = ids.videoId;
+                if (!ids.playlistId) currentPlaylistID = "";
+
+                if (player && player.loadPlaylist) {
+                    if (playlistChanged) {
                         player.loadPlaylist({ list: ids.playlistId, listType: 'playlist', index: 0, startSeconds: 0 });
-                    } else if (ids.videoId && !ids.playlistId && ids.videoId !== currentVideoID) {
-                        currentVideoID = ids.videoId;
-                        currentPlaylistID = "";
+                    } else if (videoChanged) {
                         player.loadVideoById({ videoId: ids.videoId });
                     }
-
-                    if (currentMuteStatus == "0" && systemReady) { player.unMute(); player.setVolume(100); }
-                    else { player.mute(); }
+                    if (currentMuteStatus == "0" && systemReady) { player.unMute(); player.setVolume(100); } else { player.mute(); }
                 }
             }
         });
@@ -482,51 +455,34 @@
         db.ref('queue_system/current_calling').on('value', snap => {
             const d = snap.val();
             if (d && systemReady) {
-                // FOOLPROOF RECALL: Trigger on EVERY firebase event (no filters)
+                // FOOLPROOF RECALL: No filters, trigger on every event
                 document.getElementById('tvNum').innerText = d.number;
                 document.getElementById('tvRoom').innerText = d.room;
                 const card = document.getElementById('callCard');
-                if (card) {
-                    card.classList.remove('blink');
-                    void card.offsetWidth;
-                    card.classList.add('blink');
-                }
-                if (d.number !== "---") {
-                    playAlert();
-                    setTimeout(() => announce(d.number, d.room), 1200);
-                }
+                if (card) { card.classList.remove('blink'); void card.offsetWidth; card.classList.add('blink'); }
+                if (d.number !== "---") { playAlert(); setTimeout(() => announce(d.number, d.room), 1200); }
             }
         });
 
         db.ref('queue_system/waiting_list').on('value', snap => {
             const list = snap.val(); if (!list) return;
-            const historyData = Object.keys(list)
-                .map(k => ({ number: k, ...list[k] }))
-                .filter(i => i.status === 'called')
-                .sort((a, b) => b.timestamp - a.timestamp)
-                .slice(0, 6);
-
+            const historyData = Object.keys(list).map(k => ({ number: k, ...list[k] })).filter(i => i.status === 'called').sort((a, b) => b.timestamp - a.timestamp).slice(0, 6);
             const grid = document.getElementById('historyGrid');
             if (grid) {
                 grid.innerHTML = "";
                 historyData.forEach(i => {
-                    grid.innerHTML += `<div class="history-item">
-                        <div class="h-num">${i.number}</div>
-                        <div class="h-room">${i.calledBy || 'Bilik'}</div>
-                    </div>`;
+                    grid.innerHTML += `<div class="history-item"><div class="h-num">${i.number}</div><div class="h-room">${i.calledBy || 'Bilik'}</div></div>`;
                 });
             }
         });
 
         function updateClock() {
             const now = new Date();
-            const timeEl = document.getElementById('tvTime');
-            const dateEl = document.getElementById('tvDate');
+            const timeEl = document.getElementById('tvTime'), dateEl = document.getElementById('tvDate');
             if (timeEl) timeEl.innerText = now.toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }).toUpperCase();
             if (dateEl) dateEl.innerText = now.toLocaleDateString('ms-MY', { weekday: 'short', day: 'numeric', month: 'short' });
         }
-        setInterval(updateClock, 1000);
-        updateClock();
+        setInterval(updateClock, 1000); updateClock();
     </script>
 </body>
 
