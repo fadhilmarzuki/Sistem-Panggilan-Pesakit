@@ -381,9 +381,6 @@
 
         function announce(num, room) {
             if (!systemReady) return;
-            // Immediate volume drop before voice announcement
-            if (player && currentMuteStatus == "0") player.setVolume(20);
-
             const msg = new SpeechSynthesisUtterance(`Nombor, ${toMalayWords(num, true)}. Sila ke ${toMalayWords(room, false)}.`);
             if (malayVoice) { msg.voice = malayVoice; msg.lang = malayVoice.lang; } else { msg.lang = 'ms-MY'; }
             msg.rate = 0.85;
@@ -400,16 +397,19 @@
             }
         }
 
+        // NO PROTOCOL REGEX EXTRACTION (Vastly more robust)
         function extractIDs(url) {
             let vID = "", pID = "";
-            try {
-                const urlObj = new URL(url);
-                if (urlObj.hostname.includes('youtube.com')) {
-                    vID = urlObj.searchParams.get('v') || ""; pID = urlObj.searchParams.get('list') || "";
-                } else if (urlObj.hostname.includes('youtu.be')) {
-                    vID = urlObj.pathname.substring(1) || ""; pID = urlObj.searchParams.get('list') || "";
-                }
-            } catch (e) { }
+            if (!url) return { videoId: "", playlistId: "" };
+
+            // Extract Video ID
+            const vMatch = url.match(/(?:v=|\/v\/|embed\/|youtu\.be\/|\/watch\?v=)([^#&?]*)/);
+            if (vMatch) vID = vMatch[1];
+
+            // Extract Playlist ID
+            const pMatch = url.match(/[?&]list=([^#&?]*)/);
+            if (pMatch) pID = pMatch[1];
+
             return { videoId: vID, playlistId: pID };
         }
 
@@ -431,15 +431,17 @@
                 setTimeout(fitClinicName, 100);
                 document.getElementById('tvMarquee').innerText = s.message || "Selamat Datang...";
 
-                const newURL = s.youtube_link || "";
-                const ids = extractIDs(newURL);
+                const rawURL = s.youtube_link || "";
                 currentMuteStatus = s.sound_mute !== undefined ? s.sound_mute : "1";
 
-                // Track and apply URL changes
-                if (newURL !== lastYoutubeURL) {
-                    lastYoutubeURL = newURL;
+                // Absolute Change Detection (Compare the raw string)
+                if (rawURL !== lastYoutubeURL) {
+                    console.log("YouTube Link Changed:", rawURL);
+                    lastYoutubeURL = rawURL;
+                    const ids = extractIDs(rawURL);
                     currentPlaylistID = ids.playlistId;
                     currentVideoID = ids.videoId;
+
                     if (player && player.loadPlaylist) {
                         if (currentPlaylistID) {
                             player.loadPlaylist({ list: currentPlaylistID, listType: 'playlist', index: 0, startSeconds: 0 });
@@ -458,7 +460,7 @@
         db.ref('queue_system/current_calling').on('value', snap => {
             const d = snap.val();
             if (d && systemReady) {
-                // Audio Ducking: Lower volume immediately when call starts
+                // Audio Ducking: Drop immediately
                 if (player && currentMuteStatus == "0") player.setVolume(20);
 
                 document.getElementById('tvNum').innerText = d.number;
@@ -479,8 +481,8 @@
             const grid = document.getElementById('historyGrid');
             if (grid) {
                 grid.innerHTML = "";
-                historyData.forEach(i => {
-                    grid.innerHTML += `<div class="history-item"><div class="h-num">${i.number}</div><div class="h-room">${i.calledBy || 'Bilik'}</div></div>`;
+                historyData.forEach(index => {
+                    grid.innerHTML += `<div class="history-item"><div class="h-num">${index.number}</div><div class="h-room">${index.calledBy || 'Bilik'}</div></div>`;
                 });
             }
         });
