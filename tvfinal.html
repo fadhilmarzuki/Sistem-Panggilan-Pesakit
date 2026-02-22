@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Smart TV (Final Fixed)</title>
+    <title>SISTEM PENGURUSAN GILIRAN PESAKIT (SPGP)-(Ultimate Stable)</title>
     <style>
         * {
             box-sizing: border-box;
@@ -308,6 +308,7 @@
         let currentVideoID = "77ZozI0rw7w";
         let currentPlaylistID = "";
         let currentMuteStatus = "1";
+        let lastYoutubeURL = "";
 
         window.onload = function () {
             document.getElementById('startBtn').focus();
@@ -317,14 +318,12 @@
             if (!systemReady) initTV();
         });
 
-        // Robust Youtube Initialization
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('ytPlayer', {
                 height: '100%', width: '100%',
                 playerVars: {
                     'autoplay': 1, 'mute': 1, 'loop': 1, 'controls': 0,
                     'rel': 0, 'modestbranding': 1,
-                    // Use the latest IDs detected from Firebase (even if received before API ready)
                     'list': currentPlaylistID || undefined,
                     'listType': currentPlaylistID ? 'playlist' : undefined,
                     'playlist': currentPlaylistID ? undefined : currentVideoID
@@ -377,12 +376,14 @@
 
         function playAlert() {
             const sound = document.getElementById('alertSound');
-            if (sound) { sound.currentTime = 0; sound.play().catch(e => console.log("Audio block")); }
+            if (sound) { sound.currentTime = 0; sound.play().catch(e => console.log("Audio trigger blocked")); }
         }
 
         function announce(num, room) {
             if (!systemReady) return;
+            // Immediate volume drop before voice announcement
             if (player && currentMuteStatus == "0") player.setVolume(20);
+
             const msg = new SpeechSynthesisUtterance(`Nombor, ${toMalayWords(num, true)}. Sila ke ${toMalayWords(room, false)}.`);
             if (malayVoice) { msg.voice = malayVoice; msg.lang = malayVoice.lang; } else { msg.lang = 'ms-MY'; }
             msg.rate = 0.85;
@@ -430,23 +431,25 @@
                 setTimeout(fitClinicName, 100);
                 document.getElementById('tvMarquee').innerText = s.message || "Selamat Datang...";
 
-                const ids = extractIDs(s.youtube_link);
+                const newURL = s.youtube_link || "";
+                const ids = extractIDs(newURL);
                 currentMuteStatus = s.sound_mute !== undefined ? s.sound_mute : "1";
 
-                // Track IDs immediately for race condition fix
-                const playlistChanged = ids.playlistId && ids.playlistId !== currentPlaylistID;
-                const videoChanged = ids.videoId && !ids.playlistId && ids.videoId !== currentVideoID;
-
-                if (ids.playlistId) currentPlaylistID = ids.playlistId;
-                if (ids.videoId) currentVideoID = ids.videoId;
-                if (!ids.playlistId) currentPlaylistID = "";
-
-                if (player && player.loadPlaylist) {
-                    if (playlistChanged) {
-                        player.loadPlaylist({ list: ids.playlistId, listType: 'playlist', index: 0, startSeconds: 0 });
-                    } else if (videoChanged) {
-                        player.loadVideoById({ videoId: ids.videoId });
+                // Track and apply URL changes
+                if (newURL !== lastYoutubeURL) {
+                    lastYoutubeURL = newURL;
+                    currentPlaylistID = ids.playlistId;
+                    currentVideoID = ids.videoId;
+                    if (player && player.loadPlaylist) {
+                        if (currentPlaylistID) {
+                            player.loadPlaylist({ list: currentPlaylistID, listType: 'playlist', index: 0, startSeconds: 0 });
+                        } else if (currentVideoID) {
+                            player.loadVideoById({ videoId: currentVideoID });
+                        }
                     }
+                }
+
+                if (player && player.mute) {
                     if (currentMuteStatus == "0" && systemReady) { player.unMute(); player.setVolume(100); } else { player.mute(); }
                 }
             }
@@ -455,12 +458,18 @@
         db.ref('queue_system/current_calling').on('value', snap => {
             const d = snap.val();
             if (d && systemReady) {
-                // FOOLPROOF RECALL: No filters, trigger on every event
+                // Audio Ducking: Lower volume immediately when call starts
+                if (player && currentMuteStatus == "0") player.setVolume(20);
+
                 document.getElementById('tvNum').innerText = d.number;
                 document.getElementById('tvRoom').innerText = d.room;
                 const card = document.getElementById('callCard');
                 if (card) { card.classList.remove('blink'); void card.offsetWidth; card.classList.add('blink'); }
-                if (d.number !== "---") { playAlert(); setTimeout(() => announce(d.number, d.room), 1200); }
+
+                if (d.number !== "---") {
+                    playAlert();
+                    setTimeout(() => announce(d.number, d.room), 1200);
+                }
             }
         });
 
