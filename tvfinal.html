@@ -143,35 +143,39 @@
         .history-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px;
+            grid-template-rows: repeat(3, 1fr);
+            gap: 1.5vmin;
             flex-grow: 1;
-            align-content: start;
+            overflow: hidden;
         }
 
         .history-item {
-            background: #f8f9fa;
-            border: 1px solid #e1e4e8;
-            border-radius: 8px;
+            background: #fcfcfc;
+            border: 3px solid #e1e4e8;
+            border-radius: 15px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             padding: 5px;
-            height: auto;
-            min-height: 60px;
+            height: 100%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
         }
 
         .h-num {
-            font-size: clamp(18px, 3vmin, 26px);
+            font-size: clamp(25px, 5vmin, 55px);
             font-weight: 900;
             color: #2c3e50;
+            line-height: 1;
         }
 
         .h-room {
-            font-size: clamp(10px, 1.5vmin, 14px);
+            font-size: clamp(12px, 2vmin, 20px);
             color: #1a73e8;
-            font-weight: bold;
+            font-weight: 900;
             text-align: center;
+            text-transform: uppercase;
+            margin-top: 5px;
         }
 
         #tvTime {
