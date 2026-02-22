@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Smart TV - KK BAS (Playlist Supported)</title>
+    <title>Smart TV (Final Fixed)</title>
     <style>
         * {
             box-sizing: border-box;
@@ -52,12 +52,13 @@
         }
 
         #clinicName {
-            font-size: 55px;
+            font-size: clamp(25px, 4.5vmin, 55px);
             line-height: 1.1;
             display: block;
             width: 100%;
             word-wrap: break-word;
             white-space: pre-wrap;
+            text-transform: uppercase;
         }
 
         .header-right {
@@ -101,13 +102,13 @@
         }
 
         .label-now {
-            font-size: 18px;
+            font-size: clamp(14px, 2vmin, 18px);
             color: #e74c3c;
             font-weight: bold;
         }
 
         .num-now {
-            font-size: 90px;
+            font-size: clamp(60px, 15vmin, 140px);
             font-weight: 900;
             color: #2c3e50;
             line-height: 1;
@@ -115,9 +116,10 @@
         }
 
         .room-now {
-            font-size: 40px;
+            font-size: clamp(20px, 4vmin, 40px);
             font-weight: bold;
             color: #1a73e8;
+            text-align: center;
         }
 
         .history-section {
@@ -129,12 +131,13 @@
 
         .history-title {
             text-align: center;
-            font-size: 16px;
+            font-size: clamp(12px, 2vmin, 16px);
             color: #7f8c8d;
             border-bottom: 1px solid #ddd;
             padding-bottom: 5px;
             margin-bottom: 8px;
             flex-shrink: 0;
+            font-weight: 900;
         }
 
         .history-grid {
@@ -154,36 +157,39 @@
             align-items: center;
             justify-content: center;
             padding: 5px;
-            height: 100%;
+            height: auto;
+            min-height: 60px;
         }
 
         .h-num {
-            font-size: 26px;
+            font-size: clamp(18px, 3vmin, 26px);
             font-weight: 900;
             color: #2c3e50;
         }
 
         .h-room {
-            font-size: 14px;
+            font-size: clamp(10px, 1.5vmin, 14px);
             color: #1a73e8;
             font-weight: bold;
+            text-align: center;
         }
 
         #tvTime {
-            font-size: 38px;
+            font-size: clamp(20px, 5vmin, 38px);
             font-weight: bold;
         }
 
         #tvDate {
-            font-size: 18px;
+            font-size: clamp(12px, 2vmin, 18px);
             opacity: 0.9;
         }
 
         .marquee {
             white-space: nowrap;
-            font-size: 28px;
+            font-size: clamp(18px, 4vmin, 28px);
             animation: marquee 25s linear infinite;
             padding-left: 100%;
+            font-weight: bold;
         }
 
         @keyframes marquee {
@@ -227,12 +233,13 @@
         }
 
         .blink {
-            animation: blinker 1s linear 5;
+            animation: blinker 0.6s linear 5;
         }
 
         @keyframes blinker {
             50% {
                 opacity: 0;
+                background-color: #f1c40f;
             }
         }
     </style>
@@ -241,7 +248,7 @@
 <body>
 
     <div id="overlay">
-        <h1 style="color:white; margin-bottom:10px;">SISTEM PANGGILAN KK BAS</h1>
+        <h1 style="color:white; margin-bottom:10px;">SISTEM PENGURUSAN GILIRAN PESAKIT (SPGP)</h1>
         <p style="color:white; opacity:0.8; margin-bottom:30px;">Tekan butang 'OK' atau 'ENTER' pada remote untuk mula
         </p>
         <button id="startBtn" onclick="initTV()" autofocus>MULA PAPARAN TV</button>
@@ -249,7 +256,7 @@
 
     <div class="header-container">
         <div class="header-left">
-            <div id="clinicName">KK BAS</div>
+            <div id="clinicName">KK</div>
         </div>
         <div class="header-right">
             <div id="tvTime">00:00:00</div>
@@ -277,6 +284,9 @@
     <div class="footer-container">
         <div class="marquee" id="tvMarquee">Selamat Datang ke Klinik Kesihatan.</div>
     </div>
+
+    <audio id="alertSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"
+        preload="auto"></audio>
 
     <script src="https://www.youtube.com/iframe_api"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
@@ -314,7 +324,7 @@
                     'controls': 0,
                     'rel': 0,
                     'modestbranding': 1,
-                    'playlist': currentVideoID // Default loop untuk single video
+                    'playlist': currentVideoID
                 },
                 events: {
                     'onReady': onPlayerReady,
@@ -324,15 +334,12 @@
         }
 
         function onPlayerReady(event) {
-            console.log("Player Ready");
             if (systemReady) player.playVideo();
         }
 
-        // Memastikan loop berfungsi walaupun dalam playlist
         function onPlayerStateChange(event) {
             if (event.data === YT.PlayerState.ENDED) {
                 if (currentPlaylistID) {
-                    // Jika video terakhir dalam playlist tamat, pusing balik ke awal
                     const currentIndex = player.getPlaylistIndex();
                     const playlist = player.getPlaylist();
                     if (currentIndex === playlist.length - 1) {
@@ -346,14 +353,11 @@
 
         function loadVoices() {
             const voices = window.speechSynthesis.getVoices();
-            // Lebih fleksibel: Cari Melayu dahulu, kemudian Indonesia (bunyi hampir sama), atau sebarang suara wanita Google
             malayVoice = voices.find(v =>
                 v.lang.includes('ms-MY') ||
                 v.name.includes('Zira') ||
                 v.name.includes('Google Bahasa Melayu') ||
-                v.lang.includes('id-ID') ||
-                v.name.includes('Indonesian') ||
-                v.name.includes('Female')
+                v.lang.includes('id-ID')
             );
         }
         window.speechSynthesis.onvoiceschanged = loadVoices;
@@ -365,31 +369,33 @@
                 '5': 'lima', '6': 'enam', '7': 'tujuh', '8': 'lapan', '9': 'sembilan'
             };
             if (spellOut) {
-                // Eja satu-satu untuk nombor giliran (cth: A , satu dua tiga)
-                // Tambah koma selepas huruf pertama untuk 'pause'
                 let chars = text.toString().split('');
                 return chars.map((char, index) => {
                     let word = map[char] || char;
                     return (index === 0 && isNaN(char)) ? word + ' , ' : word;
                 }).join(' ');
             } else {
-                // Sebut perkataan penuh untuk Bilik (lowercase paksa supaya tak eja acronim)
-                // Tukar angka di dalamnya (cth: Bilik satu)
                 return text.toString().toLowerCase().replace(/[0-9]/g, (digit) => ' ' + map[digit] + ' ');
+            }
+        }
+
+        function playAlert() {
+            const sound = document.getElementById('alertSound');
+            if (sound) {
+                sound.currentTime = 0;
+                sound.play().catch(e => console.log("Audio trigger blocked"));
             }
         }
 
         function announce(num, room) {
             if (!systemReady) return;
 
-            // Perlahankan video jika tidak di-mute
             if (player && currentMuteStatus == "0") player.setVolume(20);
 
             const malayNum = toMalayWords(num, true);
             const malayRoom = toMalayWords(room, false);
             const msg = new SpeechSynthesisUtterance(`Nombor, ${malayNum}. Sila ke ${malayRoom}.`);
 
-            // Gunakan malayVoice jika jumpa, jika tidak biarkan default sistem
             if (malayVoice) {
                 msg.voice = malayVoice;
                 msg.lang = malayVoice.lang;
@@ -398,17 +404,9 @@
             }
 
             msg.rate = 0.85;
-            msg.pitch = 1;
-
             msg.onend = function () {
                 if (player && currentMuteStatus == "0") player.setVolume(100);
             };
-
-            msg.onerror = function (e) {
-                console.error("Speech Synthesis Error:", e);
-                if (player && currentMuteStatus == "0") player.setVolume(100);
-            };
-
             window.speechSynthesis.speak(msg);
         }
 
@@ -417,16 +415,13 @@
             const child = document.getElementById('clinicName');
             if (!parent || !child) return;
             let fontSize = 55; child.style.fontSize = fontSize + "px";
-            while ((child.scrollHeight > parent.clientHeight - 20 || child.scrollWidth > parent.clientWidth - 60) && fontSize > 35) {
+            while ((child.scrollHeight > parent.clientHeight - 20 || child.scrollWidth > parent.clientWidth - 50) && fontSize > 25) {
                 fontSize--; child.style.fontSize = fontSize + "px";
             }
         }
 
-        // Fungsi pengekstrakan yang dipertingkatkan (Video & Playlist)
         function extractIDs(url) {
-            let vID = "";
-            let pID = "";
-
+            let vID = ""; let pID = "";
             try {
                 const urlObj = new URL(url);
                 if (urlObj.hostname.includes('youtube.com')) {
@@ -436,10 +431,7 @@
                     vID = urlObj.pathname.substring(1) || "";
                     pID = urlObj.searchParams.get('list') || "";
                 }
-            } catch (e) {
-                console.log("Invalid URL, using defaults");
-            }
-
+            } catch (e) { }
             return { videoId: vID, playlistId: pID };
         }
 
@@ -447,26 +439,19 @@
             if (systemReady) return;
             document.getElementById('overlay').style.display = 'none';
             systemReady = true;
-
-            // Warm-up Audio Context & Speech Synthesis (Sangat penting untuk Smart TV/Browser modern)
             const warmup = new SpeechSynthesisUtterance("");
             window.speechSynthesis.speak(warmup);
-
             if (player) {
                 player.playVideo();
-                if (currentMuteStatus == "0") {
-                    player.unMute();
-                    player.setVolume(100);
-                } else {
-                    player.mute();
-                }
+                if (currentMuteStatus == "0") { player.unMute(); player.setVolume(100); }
+                else { player.mute(); }
             }
         }
 
         db.ref('queue_system/settings').on('value', snap => {
             const s = snap.val();
             if (s) {
-                document.getElementById('clinicName').innerText = s.clinic_name || "KK BAS";
+                document.getElementById('clinicName').innerText = (s.clinic_name || "KK BAS").toUpperCase();
                 setTimeout(fitClinicName, 100);
                 document.getElementById('tvMarquee').innerText = s.message || "Selamat Datang...";
 
@@ -474,24 +459,18 @@
                 currentMuteStatus = s.sound_mute !== undefined ? s.sound_mute : "1";
 
                 if (player) {
-                    // Logik memuatkan kandungan baru
+                    // Force refresh video whenever link settings are updated
                     if (ids.playlistId && ids.playlistId !== currentPlaylistID) {
                         currentPlaylistID = ids.playlistId;
                         player.loadPlaylist({ list: ids.playlistId, listType: 'playlist', index: 0, startSeconds: 0 });
-                        player.setLoop(true);
                     } else if (ids.videoId && !ids.playlistId && ids.videoId !== currentVideoID) {
                         currentVideoID = ids.videoId;
                         currentPlaylistID = "";
                         player.loadVideoById({ videoId: ids.videoId });
                     }
 
-                    // Kemaskini status mute (Guna perbandingan longgar == untuk string/number)
-                    if (currentMuteStatus == "0" && systemReady) {
-                        player.unMute();
-                        player.setVolume(100);
-                    } else {
-                        player.mute();
-                    }
+                    if (currentMuteStatus == "0" && systemReady) { player.unMute(); player.setVolume(100); }
+                    else { player.mute(); }
                 }
             }
         });
@@ -499,6 +478,7 @@
         db.ref('queue_system/current_calling').on('value', snap => {
             const d = snap.val();
             if (d && systemReady) {
+                // FOOLPROOF RECALL: Trigger on EVERY firebase event (no filters)
                 document.getElementById('tvNum').innerText = d.number;
                 document.getElementById('tvRoom').innerText = d.room;
                 const card = document.getElementById('callCard');
@@ -507,7 +487,10 @@
                     void card.offsetWidth;
                     card.classList.add('blink');
                 }
-                announce(d.number, d.room);
+                if (d.number !== "---") {
+                    playAlert();
+                    setTimeout(() => announce(d.number, d.room), 1200);
+                }
             }
         });
 
@@ -523,7 +506,10 @@
             if (grid) {
                 grid.innerHTML = "";
                 historyData.forEach(i => {
-                    grid.innerHTML += `<div class="history-item"><div class="h-num">${i.number}</div><div class="h-room">${i.calledBy || 'Bilik'}</div></div>`;
+                    grid.innerHTML += `<div class="history-item">
+                        <div class="h-num">${i.number}</div>
+                        <div class="h-room">${i.calledBy || 'Bilik'}</div>
+                    </div>`;
                 });
             }
         });
@@ -536,6 +522,7 @@
             if (dateEl) dateEl.innerText = now.toLocaleDateString('ms-MY', { weekday: 'short', day: 'numeric', month: 'short' });
         }
         setInterval(updateClock, 1000);
+        updateClock();
     </script>
 </body>
 
