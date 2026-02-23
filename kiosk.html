@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kiosk SPGP - Professional Edition</title>
+    <title>Kiosk SPGP - Universal Responsive</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root {
@@ -28,7 +28,7 @@
             height: 100vh;
         }
 
-        /* HEADER: 15% Tinggi - Tajuk & Jam */
+        /* HEADER */
         .kiosk-header {
             height: 15vh;
             background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
@@ -40,191 +40,194 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
             z-index: 10;
         }
-        .header-title { display: flex; flex-direction: column; text-align: left; }
-        .header-title h1 { margin: 0; font-size: 3.5vh; font-weight: 900; letter-spacing: 1px; }
-        .header-title p { margin: 2px 0 0; font-size: 1.8vh; opacity: 0.9; }
-        #liveClock { text-align: right; font-size: 2.2vh; font-weight: bold; line-height: 1.3; }
+        .header-title h1 { margin: 0; font-size: 3vh; font-weight: 900; }
+        .header-title p { margin: 2px 0 0; font-size: 1.5vh; opacity: 0.9; }
+        #liveClock { text-align: right; font-size: 1.8vh; font-weight: bold; }
 
-        /* CONTENT AREA: 75% Tinggi */
+        /* CONTENT AREA */
         .content-area {
-            height: 75vh;
-            padding: 3vh 8vw;
+            flex: 1;
+            padding: 2vh 5vw;
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
+            overflow-y: auto; /* Membenarkan skrol jika butang terlalu banyak pada skrin kecil */
         }
 
-        .instruction { font-size: 2vh; font-weight: 800; color: var(--dark-blue); margin-bottom: 1vh; text-align: center; text-transform: uppercase; }
+        .instruction { font-size: 1.8vh; font-weight: 800; color: var(--dark-blue); margin-bottom: 1vh; text-align: center; }
 
         #icInput {
-            width: 100%; height: 7vh; font-size: 3vh; border: 3px solid #fff; border-radius: 15px;
+            width: 100%; height: 7vh; font-size: 2.5vh; border: 3px solid #fff; border-radius: 12px;
             text-align: center; margin-bottom: 2vh; box-sizing: border-box; font-weight: bold;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
 
-        /* GRID PERKHIDMATAN: Logik Centering Item Ganjil */
+        /* GRID PERKHIDMATAN */
         .service-grid {
-            flex: 1;
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            overflow: hidden;
+            gap: 12px;
             align-content: start;
         }
 
         .service-btn {
-            background: white; border-radius: 20px;
-            font-size: 5vh; /* Tinggi tulisan dilaraskan sedikit */
+            background: white; border-radius: 15px;
+            font-size: 3.5vh; /* Dikecilkan sedikit untuk kesesuaian universal */
             font-weight: 900;
             color: var(--primary-blue); cursor: pointer;
             display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 6px 0 #bdc3c7; border: 2px solid rgba(26,115,232,0.1);
-            text-align: center; transition: 0.1s; 
-            padding: 8px; /* Height kotak dikurangkan melalui padding */
+            box-shadow: 0 4px 0 #bdc3c7; border: 1px solid rgba(26,115,232,0.1);
+            padding: 15px 10px; min-height: 10vh;
         }
         
-        /* Logik letak butang terakhir di tengah jika ganjil */
         .service-btn:last-child:nth-child(odd) {
             grid-column: 1 / 3;
-            width: 50%;
+            width: 60%;
             justify-self: center;
         }
 
-        .service-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #bdc3c7; background: var(--primary-blue); color: white; }
+        .service-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #bdc3c7; background: var(--primary-blue); color: white; }
 
-        /* FOOTER MARQUEE: 10% Tinggi */
+        /* FOOTER */
         .footer-marquee {
-            height: 10vh;
+            height: 8vh;
             background: var(--primary-blue);
             display: flex;
             align-items: center;
-            border-top: 4px solid var(--accent-yellow);
+            border-top: 3px solid var(--accent-yellow);
         }
-        marquee { font-size: 3.5vh; font-weight: bold; color: white; }
+        marquee { font-size: 2.5vh; font-weight: bold; color: white; }
 
         /* SKRIN BERJAYA */
-        #successScreen { display: none; flex-direction: column; height: 100%; justify-content: space-between; padding: 1vh 0; }
-        .success-row { display: flex; flex-direction: row; align-items: stretch; justify-content: center; gap: 3vw; flex: 1; margin-bottom: 1vh; }
-        .ticket-card { background: white; padding: 4vh 3vw; border-radius: 35px; border: 6px solid var(--primary-blue); box-shadow: 0 15px 35px rgba(0,0,0,0.1); flex: 1.2; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .ticket-num { font-size: 14vh; font-weight: 900; color: var(--dark-blue); margin: 0; line-height: 1; }
-        .qr-section { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; padding: 2vh; border-radius: 35px; border: 3px solid #ddd; }
-        #qrcode { margin-bottom: 1.5vh; }
-        #qrcode canvas, #qrcode img { height: 22vh !important; width: 22vh !important; }
-        .qr-text { font-size: 1.8vh; font-weight: 800; color: var(--dark-blue); margin: 0; text-transform: uppercase; text-align: center; }
-        .btn-next { background: var(--success-green); color: white; border: none; padding: 2.5vh; font-size: 3.5vh; font-weight: 900; border-radius: 20px; cursor: pointer; box-shadow: 0 8px 0 #1e8449; width: 60%; margin: 0 auto; }
+        #successScreen { display: none; flex-direction: column; height: 100%; justify-content: center; align-items: center; }
+        .success-row { 
+            display: flex; 
+            flex-direction: row; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 20px; 
+            width: 100%;
+        }
+        .ticket-card { background: white; padding: 3vh; border-radius: 20px; border: 4px solid var(--primary-blue); text-align: center; flex: 1; max-width: 400px; }
+        .ticket-num { font-size: 10vh; font-weight: 900; color: var(--dark-blue); line-height: 1; }
+        .qr-section { background: white; padding: 2vh; border-radius: 20px; border: 1px solid #ddd; text-align: center; flex: 0.8; max-width: 300px; }
+        #qrcode canvas, #qrcode img { max-height: 15vh !important; max-width: 15vh !important; margin: 0 auto; }
+        .qr-text { font-size: 1.4vh; font-weight: 800; color: var(--dark-blue); margin-top: 5px; }
+        .btn-next { background: var(--success-green); color: white; border: none; padding: 2vh; font-size: 2.5vh; font-weight: 900; border-radius: 15px; cursor: pointer; margin-top: 20px; width: 80%; max-width: 400px; }
+
+        /* RESPONSIVE UNTUK TELEFON (MOD POTRET) */
+        @media (max-width: 600px) {
+            .kiosk-header { height: 12vh; padding: 0 3vw; }
+            .header-title h1 { font-size: 2.2vh; }
+            #liveClock { font-size: 1.4vh; }
+            .content-area { height: 80vh; padding: 2vh 3vw; }
+            .service-grid { grid-template-columns: 1fr; } /* Tukar ke 1 kolum di phone */
+            .service-btn { font-size: 3vh; min-height: 8vh; grid-column: auto !important; width: 100% !important; }
+            
+            .success-row { flex-direction: column; gap: 10px; } /* Tukar ke menegak di phone */
+            .ticket-card, .qr-section { width: 90%; flex: none; padding: 2vh; }
+            .ticket-num { font-size: 8vh; }
+            #qrcode canvas, #qrcode img { max-height: 12vh !important; max-width: 12vh !important; }
+        }
     </style>
 </head>
 <body>
-
-<div class="kiosk-wrapper">
-    <div class="kiosk-header">
-        <div class="header-title">
-            <h1 id="clinicTitle">KLINIK KESIHATAN PENDANG</h1>
-            <p>UNIT NCD JABATAN KESIHATAN NEGERI KEDAH</p>
-        </div>
-        <div id="liveClock">--:--:--<br>--/--/--</div>
-    </div>
-
-    <div class="content-area">
-        <div id="selectionScreen" style="display: flex; flex-direction: column; height: 100%;">
-            <h2 style="text-align: center;">SISTEM PENGURUSAN GILIRAN PESAKIT (SPGP)</h2>
-	    <div class="instruction">1. MASUKKAN NO. IC (PILIHAN)</div>
-            <input type="number" id="icInput" placeholder="Sila Taip No. IC" inputmode="numeric">
-            <div class="instruction">2. SILA SENTUH PERKHIDMATAN PILIHAN</div>
-            <div class="service-grid" id="serviceButtons"></div>
-        </div>
-
-        <div id="successScreen">
-            <h2 style="color: var(--success-green); font-size: 4vh; margin: 0; font-weight: 900; text-align: center;">PENDAFTARAN BERJAYA!</h2>
-            <div class="success-row">
-                <div class="ticket-card">
-                    <div style="font-size: 2.5vh; font-weight: bold; color: var(--primary-blue);">NOMBOR ANDA:</div>
-                    <div id="dispNo" class="ticket-num">---</div>
-                    <div id="dispService" style="font-size: 3.5vh; font-weight: 900; color: #555;">---</div>
-                </div>
-                <div class="qr-section">
-                    <div id="qrcode"></div>
-                    <p class="qr-text">SCAN UNTUK NOTIFIKASI TELEFON</p>
-                </div>
+    <div class="kiosk-wrapper">
+        <div class="kiosk-header">
+            <div class="header-title">
+                <h1 id="clinicTitle">KLINIK KESIHATAN PENDANG</h1>
+                <p>UNIT NCD JKN KEDAH</p>
             </div>
-            <button class="btn-next" onclick="resetKiosk()">PESAKIT SETERUSNYA ➜</button>
+            <div id="liveClock">--:--:--<br>--/--/--</div>
+        </div>
+
+        <div class="content-area">
+            <div id="selectionScreen">
+                <h2 style="text-align: center; font-size: 2.2vh; margin-top: 0;">SISTEM PENGURUSAN GILIRAN PESAKIT (SPGP)</h2>
+                <div class="instruction">1. MASUKKAN NO. IC (PILIHAN)</div>
+                <input type="number" id="icInput" placeholder="Sila Taip No. IC" inputmode="numeric">
+                <div class="instruction">2. SILA SENTUH PERKHIDMATAN PILIHAN</div>
+                <div class="service-grid" id="serviceButtons"></div>
+            </div>
+
+            <div id="successScreen">
+                <h2 style="color: var(--success-green); font-size: 3vh; margin: 0 0 10px 0; font-weight: 900;">PENDAFTARAN BERJAYA!</h2>
+                <div class="success-row">
+                    <div class="ticket-card">
+                        <div style="font-size: 1.8vh; font-weight: bold; color: var(--primary-blue);">NOMBOR ANDA:</div>
+                        <div id="dispNo" class="ticket-num">---</div>
+                        <div id="dispService" style="font-size: 2.5vh; font-weight: 900; color: #555;">---</div>
+                    </div>
+                    <div class="qr-section">
+                        <div id="qrcode"></div>
+                        <p class="qr-text">SCAN UNTUK NOTIFIKASI</p>
+                    </div>
+                </div>
+                <button class="btn-next" onclick="resetKiosk()">PESAKIT SETERUSNYA ➜</button>
+            </div>
+        </div>
+
+        <div class="footer-marquee">
+            <marquee id="marqueeText">Selamat Datang ke Sistem Pengurusan Giliran Pesakit (SPGP)</marquee>
         </div>
     </div>
 
-    <div class="footer-marquee">
-        <marquee id="marqueeText">Selamat Datang ke Sistem Pengurusan Giliran Pesakit (SPGP)</marquee>
-    </div>
-</div>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    <script>
+        const firebaseConfig = { 
+            apiKey: "AIzaSyBRK634U8ER_ZFOi1SV9nu8McndUWdD-rg", 
+            databaseURL: "https://sistem-panggilan-pelanggan-default-rtdb.asia-southeast1.firebasedatabase.app" 
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
-<script>
-    const firebaseConfig = { 
-        apiKey: "AIzaSyBRK634U8ER_ZFOi1SV9nu8McndUWdD-rg", 
-        databaseURL: "https://sistem-panggilan-pelanggan-default-rtdb.asia-southeast1.firebasedatabase.app" 
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    // Fungsi Jam & Tarikh
-    function updateClock() {
-        const now = new Date();
-        const timeStr = now.toLocaleTimeString('ms-MY', { hour12: true });
-        const dateStr = now.toLocaleDateString('ms-MY', { day:'2-digit', month:'2-digit', year:'numeric' });
-        document.getElementById('liveClock').innerHTML = `${timeStr}<br>${dateStr}`;
-    }
-    setInterval(updateClock, 1000);
-
-    // Ambil tetapan unit & marquee secara live
-    db.ref('queue_system/settings').on('value', snap => {
-        const s = snap.val();
-        if(s) {
-            document.getElementById('clinicTitle').innerText = s.clinic_name || "KLINIK KESIHATAN PENDANG";
-            document.getElementById('marqueeText').innerText = s.message || "Selamat Datang ke SPGP";
-            const container = document.getElementById('serviceButtons');
-            container.innerHTML = "";
-            (s.services || []).forEach(item => {
-                if(item.name) {
-                    const btn = document.createElement('button');
-                    btn.className = "service-btn";
-                    btn.innerText = item.name.toUpperCase();
-                    btn.onclick = () => prosesDaftar(item.name, item.abjad);
-                    container.appendChild(btn);
-                }
-            });
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('liveClock').innerHTML = now.toLocaleTimeString('ms-MY', { hour12: true }) + "<br>" + now.toLocaleDateString('ms-MY');
         }
-    });
+        setInterval(updateClock, 1000);
 
-    function prosesDaftar(serviceName, prefix) {
-        const ic = document.getElementById('icInput').value.trim() || "PESAKIT-KIOSK";
-        const pre = prefix || "A";
-
-        db.ref('queue_system/last_number/' + pre).transaction(c => (c || 0) + 1, (err, comm, snap) => {
-            if(comm) {
-                const no = pre + "-" + snap.val().toString().padStart(3, '0');
-                db.ref('queue_system/waiting_list/' + no).set({ 
-                    ic: ic, service: serviceName, status: "waiting", timestamp: Date.now() 
-                });
-
-                document.getElementById('selectionScreen').style.display = "none";
-                document.getElementById('successScreen').style.display = "flex";
-                document.getElementById('dispNo').innerText = no;
-                document.getElementById('dispService').innerText = serviceName.toUpperCase();
-
-                document.getElementById('qrcode').innerHTML = "";
-                new QRCode(document.getElementById("qrcode"), {
-                    text: `https://fadhilmarzuki.github.io/Sistem-Panggilan-Pesakit/pesakitfinal.html?no=${no}`,
-                    width: 250, height: 250
+        db.ref('queue_system/settings').on('value', snap => {
+            const s = snap.val();
+            if(s) {
+                document.getElementById('clinicTitle').innerText = s.clinic_name || "KLINIK KESIHATAN PENDANG";
+                document.getElementById('marqueeText').innerText = s.message || "Selamat Datang ke SPGP";
+                const container = document.getElementById('serviceButtons');
+                container.innerHTML = "";
+                (s.services || []).forEach(item => {
+                    if(item.name) {
+                        const btn = document.createElement('button');
+                        btn.className = "service-btn";
+                        btn.innerText = item.name.toUpperCase();
+                        btn.onclick = () => prosesDaftar(item.name, item.abjad);
+                        container.appendChild(btn);
+                    }
                 });
             }
         });
-    }
 
-    function resetKiosk() {
-        document.getElementById('icInput').value = "";
-        document.getElementById('selectionScreen').style.display = "flex";
-        document.getElementById('successScreen').style.display = "none";
-    }
-</script>
+        function prosesDaftar(serviceName, prefix) {
+            const ic = document.getElementById('icInput').value.trim() || "PESAKIT-KIOSK";
+            const pre = prefix || "A";
+            db.ref('queue_system/last_number/' + pre).transaction(c => (c || 0) + 1, (err, comm, snap) => {
+                if(comm) {
+                    const no = pre + "-" + snap.val().toString().padStart(3, '0');
+                    db.ref('queue_system/waiting_list/' + no).set({ ic: ic, service: serviceName, status: "waiting", timestamp: Date.now() });
+                    document.getElementById('selectionScreen').style.display = "none";
+                    document.getElementById('successScreen').style.display = "flex";
+                    document.getElementById('dispNo').innerText = no;
+                    document.getElementById('dispService').innerText = serviceName.toUpperCase();
+                    document.getElementById('qrcode').innerHTML = "";
+                    new QRCode(document.getElementById("qrcode"), { text: `https://fadhilmarzuki.github.io/Sistem-Panggilan-Pesakit/pesakitfinal.html?no=${no}`, width: 128, height: 128 });
+                }
+            });
+        }
+
+        function resetKiosk() {
+            document.getElementById('icInput').value = "";
+            document.getElementById('selectionScreen').style.display = "block";
+            document.getElementById('successScreen').style.display = "none";
+        }
+    </script>
 </body>
 </html>
