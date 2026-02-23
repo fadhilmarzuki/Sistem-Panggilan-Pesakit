@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>SISTEM PENGURUSAN GILIRAN PESAKIT (SPGP)-(Ultimate Stable)</title>
+    <title>Smart TV - SPGP (Ultimate Stable)</title>
     <style>
         * {
             box-sizing: border-box;
@@ -52,7 +52,7 @@
         }
 
         #clinicName {
-            font-size: clamp(25px, 4.5vmin, 55px);
+            font-size: 55px;
             line-height: 1.1;
             display: block;
             width: 100%;
@@ -98,33 +98,39 @@
             align-items: center;
             justify-content: center;
             border-bottom: 3px solid #eee;
-            padding: 10px;
+            padding: 15px;
+            overflow: hidden;
         }
 
         .label-now {
-            font-size: clamp(14px, 2vmin, 18px);
+            font-size: clamp(14px, 2vmin, 20px);
             color: #e74c3c;
             font-weight: bold;
+            flex-shrink: 0;
         }
 
         .num-now {
-            font-size: clamp(60px, 15vmin, 140px);
+            font-size: 140px;
             font-weight: 900;
             color: #2c3e50;
-            line-height: 1;
+            line-height: 0.9;
             margin: 5px 0;
+            text-align: center;
+            width: 100%;
         }
 
         .room-now {
-            font-size: clamp(20px, 4vmin, 40px);
+            font-size: 40px;
             font-weight: bold;
             color: #1a73e8;
             text-align: center;
+            width: 100%;
+            line-height: 1;
         }
 
         .history-section {
             height: 60%;
-            padding: 8px;
+            padding: 10px;
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -135,8 +141,8 @@
             font-size: clamp(10px, 1.8vmin, 16px);
             color: #7f8c8d;
             border-bottom: 1px solid #ddd;
-            padding-bottom: 3px;
-            margin-bottom: 5px;
+            padding-bottom: 5px;
+            margin-bottom: 8px;
             flex-shrink: 0;
             font-weight: 900;
         }
@@ -159,7 +165,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 2px;
+            padding: 5px;
             height: 100%;
             min-height: 0;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
@@ -257,7 +263,7 @@
 <body>
 
     <div id="overlay">
-        <h1 style="color:white; margin-bottom:10px; text-align: center; padding: 0 20px;">SISTEM PANGGULAN GILIRAN
+        <h1 style="color:white; margin-bottom:10px; text-align: center; padding: 0 20px;">SISTEM PANGGILAN GILIRAN
             PESAKIT (SPGP)</h1>
         <p style="color:white; opacity:0.8; margin-bottom:30px;">Tekan butang 'OK' atau 'ENTER' pada remote untuk mula
         </p>
@@ -279,7 +285,7 @@
             <div id="ytPlayer"></div>
         </div>
         <div class="queue-section">
-            <div class="current-call" id="callCard">
+            <div class="current-call" id="currentCallContainer">
                 <div class="label-now">PANGGILAN TERKINI</div>
                 <div id="tvNum" class="num-now">---</div>
                 <div id="tvRoom" class="room-now">SEDIA</div>
@@ -318,7 +324,13 @@
 
         window.onload = function () {
             document.getElementById('startBtn').focus();
+            window.addEventListener('resize', handleResize);
         };
+
+        function handleResize() {
+            fitClinicName();
+            fitCurrentCall();
+        }
 
         window.addEventListener('keydown', function (e) {
             if (!systemReady) initTV();
@@ -403,6 +415,29 @@
             }
         }
 
+        function fitCurrentCall() {
+            const container = document.getElementById('currentCallContainer');
+            const numEl = document.getElementById('tvNum');
+            const roomEl = document.getElementById('tvRoom');
+            if (!container || !numEl || !roomEl) return;
+
+            // Fit Number (Main priority)
+            let numSize = 140;
+            numEl.style.fontSize = numSize + "px";
+            while ((numEl.scrollWidth > container.clientWidth - 40 || numEl.scrollHeight > container.clientHeight * 0.6) && numSize > 50) {
+                numSize -= 2;
+                numEl.style.fontSize = numSize + "px";
+            }
+
+            // Fit Room
+            let roomSize = 40;
+            roomEl.style.fontSize = roomSize + "px";
+            while ((roomEl.scrollWidth > container.clientWidth - 40 || roomEl.scrollHeight > container.clientHeight * 0.25) && roomSize > 15) {
+                roomSize -= 1;
+                roomEl.style.fontSize = roomSize + "px";
+            }
+        }
+
         function extractIDs(url) {
             let vID = "", pID = "";
             if (!url) return { videoId: "", playlistId: "" };
@@ -422,13 +457,14 @@
                 player.playVideo();
                 if (currentMuteStatus == "0") { player.unMute(); player.setVolume(100); } else { player.mute(); }
             }
+            handleResize();
         }
 
         db.ref('queue_system/settings').on('value', snap => {
             const s = snap.val();
             if (s) {
                 document.getElementById('clinicName').innerText = (s.clinic_name || "KK KEDAH").toUpperCase();
-                setTimeout(fitClinicName, 100);
+                setTimeout(handleResize, 100);
                 document.getElementById('tvMarquee').innerText = s.message || "Selamat Datang...";
 
                 const rawURL = s.youtube_link || "";
@@ -459,7 +495,11 @@
                 if (player && currentMuteStatus == "0") player.setVolume(20);
                 document.getElementById('tvNum').innerText = d.number;
                 document.getElementById('tvRoom').innerText = d.room;
-                const card = document.getElementById('callCard');
+
+                // Trigger auto-fit when content changes
+                setTimeout(fitCurrentCall, 50);
+
+                const card = document.getElementById('currentCallContainer');
                 if (card) { card.classList.remove('blink'); void card.offsetWidth; card.classList.add('blink'); }
                 if (d.number !== "---") {
                     playAlert();
