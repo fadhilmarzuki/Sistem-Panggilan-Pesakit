@@ -20,7 +20,6 @@
         .tab-btn { flex: 1; padding: 15px; cursor: pointer; background: #d1d8e0; border: none; font-weight: bold; border-radius: 10px 10px 0 0; }
         .active-tab { background: #fff; color: #1a73e8; border-bottom: 3px solid #1a73e8; }
         
-        /* TABLE STYLES */
         .data-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
         .data-table th { background: #34495e; color: white; padding: 10px; text-align: left; }
         .data-table td { padding: 10px; border-bottom: 1px solid #eee; }
@@ -81,22 +80,9 @@
         <div style="margin-top: 40px;">
             <h3 style="color: #2980b9; font-size: 16px;">📋 6 Pendaftaran Terakhir (Termasuk Kiosk)</h3>
             <table class="data-table reg-table">
-                <thead>
-                    <tr><th>Tarikh & Masa</th><th>No. Kad Pengenalan</th><th>No. Giliran</th></tr>
-                </thead>
-                <tbody id="recentRegTable">
-                    <tr><td colspan="3" style="text-align:center;">Memuatkan senarai...</td></tr>
-                </tbody>
+                <thead><tr><th>Tarikh & Masa</th><th>No. Kad Pengenalan</th><th>No. Giliran</th></tr></thead>
+                <tbody id="recentRegTable"><tr><td colspan="3" style="text-align:center;">Memuatkan senarai...</td></tr></tbody>
             </table>
-        </div>
-
-        <hr style="margin:40px 0; border:0; border-top:2px dashed #ddd;">
-        <h2>Semakan Nombor Giliran</h2>
-        <input type="text" id="searchIC" placeholder="Masukkan No. IC Pesakit">
-        <button class="btn-semak" onclick="semakIC()">CARI NOMBOR</button>
-        <div id="searchResult" style="display:none; margin-top:15px; padding:15px; border:1px solid #3498db; border-radius:10px; background:#ebf5fb; text-align:center;">
-            <div id="searchInfo"></div><div id="searchQrcode" style="display: flex; justify-content: center; margin: 10px 0;"></div>
-            <button onclick="this.parentElement.style.display='none'">Tutup</button>
         </div>
     </div>
 
@@ -111,10 +97,7 @@
             <div><h3>Unit & Abjad</h3><div id="servInputs"></div></div>
         </div>
         <button onclick="saveSettings()" style="background:#34495e; color:white; padding:15px; margin-top:20px; cursor:pointer; font-weight:bold; border-radius:8px;">SIMPAN TETAPAN</button>
-        <hr style="margin:40px 0;">
-        <h3 style="color:#e74c3c;">Daily Reset (Mula Sesi Baharu)</h3>
-        <p style="font-size:12px; color:#7f8c8d;">Butang ini hanya memadam senarai menunggu hari ini. Tetapan di atas TIDAK akan terjejas.</p>
-        <button onclick="confirmReset()" style="background:#e74c3c; color:white; padding:15px; width:100%; border-radius:8px; border:none; cursor:pointer; font-weight:bold;">DAILY RESET</button>
+        <hr style="margin:40px 0;"><button onclick="confirmReset()" style="background:#e74c3c; color:white; padding:15px; width:100%; border-radius:8px; cursor:pointer; font-weight:bold;">DAILY RESET</button>
     </div>
 
     <div id="sec-penilaian" class="card" style="display:none;">
@@ -142,18 +125,15 @@
                 <div class="kpi-box bg-green"><div style="font-size:11px;">KPI TERCAPAI</div><div id="kpiPercentage" style="font-size:28px; font-weight:900;">0%</div></div>
             </div>
             <div style="height: 250px; margin-bottom: 20px;"><canvas id="waitingChart"></canvas></div>
-            
             <h3 style="font-size: 14px; color: #d63031;">⚠️ SENARAI PESAKIT MELEBIHI 90 MINIT</h3>
             <table class="data-table kpi-table">
                 <thead><tr><th>Tarikh</th><th>No. Kad Pengenalan</th><th>Masa Menunggu (Min)</th></tr></thead>
                 <tbody id="kpiTableBody"><tr><td colspan="3" style="text-align:center;">Tiada pesakit.</td></tr></tbody>
             </table>
-
-            <button class="btn-download" onclick="downloadWaitTimeCSV()">📥 MUAT TURUN LAPORAN SEMUA PESAKIT (CSV)</button>
+            <button class="btn-download" onclick="downloadWaitTimeCSV()">📥 MUAT TURUN LAPORAN LENGKAP (CSV)</button>
             <button onclick="resetWaitLogs()" class="btn-reset-all" style="width:100%;">RESET LOG KPI</button>
         </div>
     </div>
-
     <div class="footer">Hak Cipta Terpelihara &copy; 2026 Unit NCD JKN Kedah</div>
 </div>
 
@@ -167,7 +147,6 @@
     let currentFilteredLogs = [];
     let servicesData = [];
 
-    // Bina Input Tetapan Secara Dinamik
     const rInputs = document.getElementById('roomInputs');
     const sInputs = document.getElementById('servInputs');
     for(let i=1; i<=10; i++) {
@@ -178,7 +157,6 @@
     function updateClock() { document.getElementById('liveClock').innerText = new Date().toLocaleString('ms-MY').toUpperCase(); }
     setInterval(updateClock, 1000);
 
-    // MUAT TETAPAN DARI FIREBASE (KEKAL)
     db.ref('queue_system/settings').on('value', snap => {
         const s = snap.val();
         if(s) {
@@ -186,13 +164,10 @@
             document.getElementById('confMessage').value = s.message || "";
             document.getElementById('confYoutube').value = s.youtube_link || "";
             if(s.sound_mute !== undefined) document.getElementById('confSound').value = s.sound_mute;
-            
             if(s.rooms) s.rooms.forEach((r, i) => { if(document.getElementById(`roomName${i+1}`)) document.getElementById(`roomName${i+1}`).value = r; });
-            
             servicesData = s.services || [];
             const regDropdown = document.getElementById('regService');
             regDropdown.innerHTML = '<option value="">-- Sila Pilih --</option>';
-            
             servicesData.forEach((item, i) => {
                 if(document.getElementById(`servName${i+1}`)) {
                     document.getElementById(`servName${i+1}`).value = item.name || "";
@@ -203,7 +178,6 @@
         }
     });
 
-    // Pendaftaran Terakhir (6 Entri)
     db.ref('queue_system/waiting_list').orderByChild('timestamp').limitToLast(6).on('value', snap => {
         const table = document.getElementById('recentRegTable');
         table.innerHTML = "";
@@ -217,10 +191,10 @@
     });
 
     function showSection(t) {
+        document.querySelectorAll('.card, .tab-btn').forEach(el => el.classList.remove('active-tab'));
         document.getElementById('sec-pendaftaran').style.display = t === 'pendaftaran' ? 'block' : 'none';
         document.getElementById('sec-tetapan').style.display = t === 'tetapan' ? 'block' : 'none';
         document.getElementById('sec-penilaian').style.display = t === 'penilaian' ? 'block' : 'none';
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active-tab'));
         if(t === 'pendaftaran') document.getElementById('tab1').classList.add('active-tab');
         if(t === 'tetapan') document.getElementById('tab2').classList.add('active-tab');
         if(t === 'penilaian') {
@@ -280,15 +254,24 @@
         waitChart = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ label: '% Capai KPI', data: values, backgroundColor: '#27ae60' }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } } });
     }
 
+    // FUNGSI MUAT TURUN DENGAN BOM DAN SEP= UNTUK EXCEL
     function downloadWaitTimeCSV() {
         if(currentFilteredLogs.length === 0) return alert("Tiada data.");
-        let csv = "Tarikh,Masa Daftar,No Giliran,IC,Unit,Bilik,Masa Panggil,Menunggu(Min),Status KPI\n";
+        
+        // sep=, memberi petunjuk kepada Excel untuk guna koma sebagai pembahagi
+        // \uFEFF adalah BOM untuk UTF-8 supaya tulisan tidak pelik dalam Excel
+        let csv = "\uFEFFsep=,\nTarikh,Masa Daftar,No Giliran,IC,Unit,Bilik,Masa Panggil,Menunggu(Min),Status KPI\n";
+        
         currentFilteredLogs.forEach(l => {
             const d = new Date(l.reg_timestamp);
             csv += `${d.toLocaleDateString()},${d.toLocaleTimeString()},${l.number},${l.ic},${l.service},${l.room},${new Date(l.call_timestamp).toLocaleTimeString()},${l.waitDuration},${l.waitDuration<=90?'CAPAI':'GAGAL'}\n`;
         });
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Laporan_KPI_Lengkap.csv`; link.click();
+        
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `Laporan_KPI_SPGP_Lengkap_${new Date().toLocaleDateString()}.csv`;
+        link.click();
     }
 
     function resetWaitLogs() { if(confirm("Padam log KPI?")) db.ref('queue_system/waiting_time_logs').remove(); }
@@ -366,13 +349,10 @@
         db.ref('queue_system/settings').set({ clinic_name: document.getElementById('confClinicName').value, message: document.getElementById('confMessage').value, youtube_link: document.getElementById('confYoutube').value, sound_mute: document.getElementById('confSound').value, rooms: rA, services: sA }).then(() => alert("Berjaya!"));
     }
 
-    // RESET HANYA PESAKIT, TETAPAN KEKAL
     function confirmReset() { 
         if(confirm("AWAS: Padam semua giliran menunggu? Tetapan Klinik TIDAK akan dipadam.")) { 
-            db.ref('queue_system/waiting_list').remove(); 
-            db.ref('queue_system/last_number').remove(); 
+            db.ref('queue_system/waiting_list').remove(); db.ref('queue_system/last_number').remove(); 
             db.ref('queue_system/current_calling').set({ number: "---", room: "Sedia", service: "-", time: Date.now() });
-            alert("Sesi giliran telah di-reset.");
             location.reload(); 
         } 
     }
