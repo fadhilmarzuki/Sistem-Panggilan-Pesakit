@@ -124,18 +124,19 @@
 
         .history-section {
             height: 60%;
-            padding: 10px;
+            padding: 8px;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
 
         .history-title {
             text-align: center;
-            font-size: clamp(12px, 2vmin, 16px);
+            font-size: clamp(10px, 1.8vmin, 16px);
             color: #7f8c8d;
             border-bottom: 1px solid #ddd;
-            padding-bottom: 5px;
-            margin-bottom: 8px;
+            padding-bottom: 3px;
+            margin-bottom: 5px;
             flex-shrink: 0;
             font-weight: 900;
         }
@@ -144,38 +145,42 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             grid-template-rows: repeat(3, 1fr);
-            gap: 1.5vmin;
+            gap: 1vmin;
             flex-grow: 1;
             overflow: hidden;
+            min-height: 0;
         }
 
         .history-item {
             background: #fcfcfc;
             border: 3px solid #e1e4e8;
-            border-radius: 15px;
+            border-radius: 12px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 5px;
+            padding: 2px;
             height: 100%;
+            min-height: 0;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
         }
 
         .h-num {
-            font-size: clamp(25px, 5vmin, 55px);
+            font-size: clamp(20px, 4.5vmin, 50px);
             font-weight: 900;
             color: #2c3e50;
-            line-height: 1;
+            line-height: 0.95;
         }
 
         .h-room {
-            font-size: clamp(12px, 2vmin, 20px);
+            font-size: clamp(10px, 1.8vmin, 18px);
             color: #1a73e8;
             font-weight: 900;
             text-align: center;
             text-transform: uppercase;
-            margin-top: 5px;
+            margin-top: 2px;
+            line-height: 1;
         }
 
         #tvTime {
@@ -211,7 +216,7 @@
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.98);
-            z-index: 1000;
+            z-index: 2000;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -252,7 +257,8 @@
 <body>
 
     <div id="overlay">
-        <h1 style="color:white; margin-bottom:10px;">SISTEM PENGURUSAN GILIRAN PESAKIT (SPGP) </h1>
+        <h1 style="color:white; margin-bottom:10px; text-align: center; padding: 0 20px;">SISTEM PANGGULAN GILIRAN
+            PESAKIT (SPGP)</h1>
         <p style="color:white; opacity:0.8; margin-bottom:30px;">Tekan butang 'OK' atau 'ENTER' pada remote untuk mula
         </p>
         <button id="startBtn" onclick="initTV()" autofocus>MULA PAPARAN TV</button>
@@ -260,7 +266,7 @@
 
     <div class="header-container">
         <div class="header-left">
-            <div id="clinicName">KK XXX</div>
+            <div id="clinicName">KK KEDAH</div>
         </div>
         <div class="header-right">
             <div id="tvTime">00:00:00</div>
@@ -397,19 +403,13 @@
             }
         }
 
-        // NO PROTOCOL REGEX EXTRACTION (Vastly more robust)
         function extractIDs(url) {
             let vID = "", pID = "";
             if (!url) return { videoId: "", playlistId: "" };
-
-            // Extract Video ID
             const vMatch = url.match(/(?:v=|\/v\/|embed\/|youtu\.be\/|\/watch\?v=)([^#&?]*)/);
             if (vMatch) vID = vMatch[1];
-
-            // Extract Playlist ID
             const pMatch = url.match(/[?&]list=([^#&?]*)/);
             if (pMatch) pID = pMatch[1];
-
             return { videoId: vID, playlistId: pID };
         }
 
@@ -427,21 +427,18 @@
         db.ref('queue_system/settings').on('value', snap => {
             const s = snap.val();
             if (s) {
-                document.getElementById('clinicName').innerText = (s.clinic_name || "KK BAS").toUpperCase();
+                document.getElementById('clinicName').innerText = (s.clinic_name || "KK KEDAH").toUpperCase();
                 setTimeout(fitClinicName, 100);
                 document.getElementById('tvMarquee').innerText = s.message || "Selamat Datang...";
 
                 const rawURL = s.youtube_link || "";
                 currentMuteStatus = s.sound_mute !== undefined ? s.sound_mute : "1";
 
-                // Absolute Change Detection (Compare the raw string)
                 if (rawURL !== lastYoutubeURL) {
-                    console.log("YouTube Link Changed:", rawURL);
                     lastYoutubeURL = rawURL;
                     const ids = extractIDs(rawURL);
                     currentPlaylistID = ids.playlistId;
                     currentVideoID = ids.videoId;
-
                     if (player && player.loadPlaylist) {
                         if (currentPlaylistID) {
                             player.loadPlaylist({ list: currentPlaylistID, listType: 'playlist', index: 0, startSeconds: 0 });
@@ -450,7 +447,6 @@
                         }
                     }
                 }
-
                 if (player && player.mute) {
                     if (currentMuteStatus == "0" && systemReady) { player.unMute(); player.setVolume(100); } else { player.mute(); }
                 }
@@ -460,14 +456,11 @@
         db.ref('queue_system/current_calling').on('value', snap => {
             const d = snap.val();
             if (d && systemReady) {
-                // Audio Ducking: Drop immediately
                 if (player && currentMuteStatus == "0") player.setVolume(20);
-
                 document.getElementById('tvNum').innerText = d.number;
                 document.getElementById('tvRoom').innerText = d.room;
                 const card = document.getElementById('callCard');
                 if (card) { card.classList.remove('blink'); void card.offsetWidth; card.classList.add('blink'); }
-
                 if (d.number !== "---") {
                     playAlert();
                     setTimeout(() => announce(d.number, d.room), 1200);
@@ -481,8 +474,8 @@
             const grid = document.getElementById('historyGrid');
             if (grid) {
                 grid.innerHTML = "";
-                historyData.forEach(index => {
-                    grid.innerHTML += `<div class="history-item"><div class="h-num">${index.number}</div><div class="h-room">${index.calledBy || 'Bilik'}</div></div>`;
+                historyData.forEach(item => {
+                    grid.innerHTML += `<div class="history-item"><div class="h-num">${item.number}</div><div class="h-room">${item.calledBy || 'Bilik'}</div></div>`;
                 });
             }
         });
@@ -498,5 +491,3 @@
 </body>
 
 </html>
-
-
