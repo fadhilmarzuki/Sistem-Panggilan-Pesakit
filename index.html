@@ -7,7 +7,9 @@
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
         .hub-container { width: 100%; max-width: 1000px; text-align: center; }
-        h1 { color: #2c3e50; margin-bottom: 5px; font-size: 2.5rem; text-transform: uppercase; font-weight: 900; }
+        
+        /* Penjajaran tengah untuk tajuk */
+        h1 { color: #2c3e50; margin-bottom: 5px; font-size: 2.5rem; text-transform: uppercase; font-weight: 900; text-align: center; }
         .subtitle { color: #7f8c8d; margin-bottom: 40px; font-size: 18px; }
         
         .grid-menu { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
@@ -25,7 +27,7 @@
             flex-direction: column; 
             align-items: center; 
             border: 2px solid transparent;
-            height: 100%; /* Pastikan kotak sama tinggi */
+            height: 100%;
             box-sizing: border-box;
         }
         
@@ -36,9 +38,10 @@
 
         /* Kod Warna Berdasarkan Fungsi */
         .daftar { border-top: 6px solid #27ae60; }
+        .kiosk { border-top: 6px solid #1abc9c; } /* Warna Teal untuk Kiosk */
         .doktor { border-top: 6px solid #e67e22; }
         .tv { border-top: 6px solid #1a73e8; }
-        .tv-lite { border-top: 6px solid #3498db; } /* Biru cerah untuk versi Lite */
+        .tv-lite { border-top: 6px solid #3498db; }
         .pesakit { border-top: 6px solid #9b59b6; }
         .manual { border-top: 6px solid #34495e; }
     </style>
@@ -54,6 +57,12 @@
             <div class="icon">📝</div>
             <div class="label">KAUNTER DAFTAR</div>
             <div class="desc">Daftar pesakit, semak IC & pantau statistik harian</div>
+        </a>
+
+        <a href="kioskfinal.html" class="btn-card kiosk">
+            <div class="icon">🖥️</div>
+            <div class="label">KIOSK PENDAFTARAN</div>
+            <div class="desc">Pendaftaran kendiri mesra warga emas & janan nombor giliran</div>
         </a>
 
         <a href="doktorfinal.html" class="btn-card doktor">
