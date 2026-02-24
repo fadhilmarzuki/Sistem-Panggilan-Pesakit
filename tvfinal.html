@@ -371,10 +371,24 @@
 
         function loadVoices() {
             const voices = window.speechSynthesis.getVoices();
-            malayVoice = voices.find(v =>
-                v.lang.includes('ms-MY') || v.name.includes('Zira') ||
-                v.name.includes('Google Bahasa Melayu') || v.lang.includes('id-ID')
-            );
+            if (!voices.length) return;
+
+            // Priority 1: High Quality Google Malay (Chrome Preferred)
+            malayVoice = voices.find(v => v.name === 'Google Bahasa Melayu');
+
+            // Priority 2: Any Microsoft Malay (Edge Preferred)
+            if (!malayVoice) malayVoice = voices.find(v => v.name.includes('Yasmin') || v.name.includes('Osman'));
+
+            // Priority 3: General Malay language match
+            if (!malayVoice) malayVoice = voices.find(v => v.lang === 'ms-MY' || v.lang.startsWith('ms'));
+
+            // Priority 4: Indonesian fallback (similar sound)
+            if (!malayVoice) malayVoice = voices.find(v => v.lang === 'id-ID' || v.lang.startsWith('id'));
+
+            // Priority 5: Zira or any local female voice (as last resort)
+            if (!malayVoice) malayVoice = voices.find(v => v.name.includes('Zira') || v.name.includes('Female'));
+
+            console.log("Selected Voice:", malayVoice ? malayVoice.name : "System Default");
         }
         window.speechSynthesis.onvoiceschanged = loadVoices;
         loadVoices();
@@ -400,7 +414,14 @@
         function announce(num, room) {
             if (!systemReady) return;
             const msg = new SpeechSynthesisUtterance(`Nombor, ${toMalayWords(num, true)}. Sila ke ${toMalayWords(room, false)}.`);
-            if (malayVoice) { msg.voice = malayVoice; msg.lang = malayVoice.lang; } else { msg.lang = 'ms-MY'; }
+
+            if (malayVoice) {
+                msg.voice = malayVoice;
+                msg.lang = malayVoice.lang;
+            } else {
+                msg.lang = 'ms-MY';
+            }
+
             msg.rate = 0.85;
             msg.onend = () => { if (player && currentMuteStatus == "0") player.setVolume(100); };
             window.speechSynthesis.speak(msg);
@@ -421,7 +442,6 @@
             const roomEl = document.getElementById('tvRoom');
             if (!container || !numEl || !roomEl) return;
 
-            // Fit Number (Main priority)
             let numSize = 140;
             numEl.style.fontSize = numSize + "px";
             while ((numEl.scrollWidth > container.clientWidth - 40 || numEl.scrollHeight > container.clientHeight * 0.6) && numSize > 50) {
@@ -429,7 +449,6 @@
                 numEl.style.fontSize = numSize + "px";
             }
 
-            // Fit Room
             let roomSize = 40;
             roomEl.style.fontSize = roomSize + "px";
             while ((roomEl.scrollWidth > container.clientWidth - 40 || roomEl.scrollHeight > container.clientHeight * 0.25) && roomSize > 15) {
@@ -489,16 +508,17 @@
             }
         });
 
+        db.ref('queue_system/test_trigger').on('value', snap => {
+            if (systemReady) playAlert();
+        });
+
         db.ref('queue_system/current_calling').on('value', snap => {
             const d = snap.val();
             if (d && systemReady) {
                 if (player && currentMuteStatus == "0") player.setVolume(20);
                 document.getElementById('tvNum').innerText = d.number;
                 document.getElementById('tvRoom').innerText = d.room;
-
-                // Trigger auto-fit when content changes
                 setTimeout(fitCurrentCall, 50);
-
                 const card = document.getElementById('currentCallContainer');
                 if (card) { card.classList.remove('blink'); void card.offsetWidth; card.classList.add('blink'); }
                 if (d.number !== "---") {
