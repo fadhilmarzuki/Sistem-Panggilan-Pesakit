@@ -776,17 +776,31 @@
         function saveSettings() {
             let rA = [], sA = [];
             for (let i = 1; i <= 10; i++) {
-                if (document.getElementById(`roomName${i}`).value) rA.push(document.getElementById(`roomName${i}`).value);
-                if (document.getElementById(`servName${i}`).value) sA.push({ name: document.getElementById(`servName${i}`).value, abjad: document.getElementById(`servAbjad${i}`).value.toUpperCase() || "A" });
+                const rVal = document.getElementById(`roomName${i}`).value;
+                const sVal = document.getElementById(`servName${i}`).value;
+                const aVal = document.getElementById(`servAbjad${i}`).value;
+                if (rVal) rA.push(rVal.trim());
+                if (sVal) sA.push({
+                    name: sVal.trim(),
+                    abjad: (aVal ? aVal.trim().toUpperCase() : "A")
+                });
             }
-            db.ref('queue_system/settings').update({
-                clinic_name: document.getElementById('confClinicName').value,
-                message: document.getElementById('confMessage').value,
-                youtube_link: document.getElementById('confYoutube').value,
+
+            const settingsData = {
+                clinic_name: document.getElementById('confClinicName').value.trim(),
+                message: document.getElementById('confMessage').value.trim(),
+                youtube_link: document.getElementById('confYoutube').value.trim(),
                 sound_mute: document.getElementById('confSound').value,
                 rooms: rA,
                 services: sA
-            }).then(() => alert("Berjaya!"));
+            };
+
+            db.ref('queue_system/settings').update(settingsData)
+                .then(() => alert("Tetapan berjaya disimpan!"))
+                .catch(err => {
+                    console.error("Firebase Update Error:", err);
+                    alert("Gagal menyimpan tetapan: " + err.message);
+                });
         }
 
         function confirmReset() { if (confirm("Padam semua giliran?")) { db.ref('queue_system/waiting_list').remove(); db.ref('queue_system/last_number').remove(); location.reload(); } }
