@@ -32,15 +32,14 @@
         .stat-label { font-size: 11px; text-transform: uppercase; opacity: 0.9; }
         .avg-rating-box { text-align: center; padding: 20px; background: #f8f9fa; border-radius: 15px; margin-bottom: 20px; border: 1px solid #eee; }
         .avg-val { font-size: 50px; font-weight: 900; color: #f1c40f; line-height: 1; }
-        .kpi-card { background: #fff; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-top: 30px; border-top: 5px solid #e67e22; }
         
-        /* KEMASKINI GRID 3 KOLUM */
+        /* GRID 3 KOLUM KPI */
         .kpi-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-        
         .kpi-box { padding: 15px; border-radius: 12px; text-align: center; color: white; }
         .bg-blue { background: #3498db; }
         .bg-green { background: #27ae60; }
-        .bg-purple { background: #8e44ad; } /* Warna kotak baru */
+        .bg-purple { background: #8e44ad; }
+
         .btn-reset-all { background: #e74c3c; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 20px; }
         .btn-download { background: #2d3436; color: white; margin: 15px 0; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; padding: 12px; width: 100%; }
         .footer { text-align: center; margin-top: 30px; padding: 20px; color: #bdc3c7; font-size: 12px; border-top: 1px solid #e0e6ed; }
@@ -84,7 +83,6 @@
 
         <hr style="margin: 40px 0; border: 0; border-top: 2px dashed #ddd;">
         <h2>Semakan Semula Nombor Giliran</h2>
-        <p style="font-size: 13px; color: #7f8c8d; margin-top: -10px;">Masukkan IC untuk mencari nombor yang telah didaftarkan hari ini.</p>
         <input type="text" id="searchIC" placeholder="Masukkan No. Kad Pengenalan Pesakit">
         <button class="btn-semak" onclick="semakIC()">CARI NOMBOR GILIRAN</button>
         
@@ -98,7 +96,7 @@
             <h3 style="color: #2980b9; font-size: 16px;">📋 6 Pendaftaran Terakhir (Termasuk Kiosk)</h3>
             <table class="data-table reg-table">
                 <thead><tr><th>Tarikh & Masa</th><th>IC</th><th>No. Giliran</th><th>Unit</th></tr></thead>
-                <tbody id="recentRegTable"><tr><td colspan="4" style="text-align:center;">Memuatkan senarai...</td></tr></tbody>
+                <tbody id="recentRegTable"></tbody>
             </table>
         </div>
     </div>
@@ -168,6 +166,12 @@
     let currentFilteredLogs = [];
     let servicesData = [];
 
+    // Helper Fungsi Tarikh & Malaysia
+    function dateLocalISO(ts) {
+        const d = new Date(ts);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
     function formatMY(ts) {
         const d = new Date(ts);
         return `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()} ${d.toLocaleTimeString('ms-MY', {hour12:false, hour:'2-digit', minute:'2-digit'})}`;
@@ -220,23 +224,18 @@
         if(items.length === 0) table.innerHTML = "<tr><td colspan='3' style='text-align:center;'>Tiada pendaftaran.</td></tr>";
     });
 
+
     function semakIC() {
         const ic = document.getElementById('searchIC').value.trim();
         if(!ic) return alert("Sila masukkan No. IC!");
         db.ref('queue_system/waiting_list').orderByChild('ic').equalTo(ic).once('value', snap => {
             if(snap.exists()) {
-                let no = "";
-                snap.forEach(c => no = c.key); 
+                let no = ""; snap.forEach(c => no = c.key); 
                 document.getElementById('searchResult').style.display = "block";
                 document.getElementById('searchInfo').innerHTML = `<h3>NOMBOR GILIRAN: <b style="font-size:32px; color:#1a73e8;">${no}</b></h3>`;
                 document.getElementById('searchQrcode').innerHTML = "";
-                new QRCode(document.getElementById('searchQrcode'), {
-                    text: `https://fadhilmarzuki.github.io/Sistem-Panggilan-Pesakit/pesakitfinal.html?no=${no}`,
-                    width: 120, height: 120
-                });
-            } else {
-                alert("Tiada rekod ditemui untuk IC tersebut.");
-            }
+                new QRCode(document.getElementById('searchQrcode'), { text: `https://fadhilmarzuki.github.io/Sistem-Panggilan-Pesakit/pesakitfinal.html?no=${no}`, width: 120, height: 120 });
+            } else alert("Tiada rekod ditemui.");
         });
     }
 
@@ -249,7 +248,7 @@
         if(t === 'tetapan') document.getElementById('tab2').classList.add('active-tab');
         if(t === 'penilaian') {
             document.getElementById('tab3').classList.add('active-tab');
-            const today = new Date().toLocaleDateString('en-CA');
+            const today = dateLocalISO(new Date());
             if(!document.getElementById('filterStartDate').value) document.getElementById('filterStartDate').value = today;
             if(!document.getElementById('filterEndDate').value) document.getElementById('filterEndDate').value = today;
             updateRatingFilters(); refreshAllReports();
@@ -267,28 +266,34 @@
         db.ref('queue_system/waiting_time_logs').on('value', snap => {
             let totalMin = 0, countCalled = 0, kpiMet = 0, chartData = {};
             let tableHtml = ""; currentFilteredLogs = [];
+            
+            // Inisialisasi julat tarikh untuk graf
+            let curr = new Date(startD);
+            let endObj = new Date(endD);
+            while(curr <= endObj) {
+                let label = dateMY(curr);
+                chartData[label] = { total: 0, met: 0 };
+                curr.setDate(curr.getDate() + 1);
+            }
 
             snap.forEach(child => {
                 const log = child.val();
-                const logDate = new Date(log.reg_timestamp).toLocaleDateString('en-CA');
-                if(logDate >= startD && logDate <= endD && (!selS || log.service === selS) && (!selR || log.room === selR)) {
+                const logDateISO = dateLocalISO(log.reg_timestamp); // Selesaikan isu data 0
+                if(logDateISO >= startD && logDateISO <= endD && (!selS || log.service === selS) && (!selR || log.room === selR)) {
                     const waitMin = Math.round((log.call_timestamp - log.reg_timestamp) / 60000);
                     totalMin += waitMin; countCalled++;
-                    if(waitMin <= 90) kpiMet++;
-                    else tableHtml += `<tr><td>${dateMY(log.reg_timestamp)}</td><td>${log.ic || 'N/A'}</td><td>${waitMin} min</td></tr>`;
-                    
                     const dLabel = dateMY(log.reg_timestamp);
-                    if(!chartData[dLabel]) chartData[dLabel] = { total: 0, met: 0 };
-                    chartData[dLabel].total++; if(waitMin <= 90) chartData[dLabel].met++;
+                    if(waitMin <= 90) kpiMet++;
+                    else tableHtml += `<tr><td>${dLabel}</td><td>${log.ic || 'N/A'}</td><td>${waitMin} min</td></tr>`;
+                    if(chartData[dLabel]) { chartData[dLabel].total++; if(waitMin <= 90) chartData[dLabel].met++; }
                     currentFilteredLogs.push({ ...log, waitDuration: waitMin, displayDate: dLabel });
                 }
             });
 
-            // KEMASKINI STATISTIK TERMASUK BILANGAN PESAKIT
             document.getElementById('totalKPICalled').innerText = countCalled;
             document.getElementById('avgWaitTime').innerText = countCalled > 0 ? Math.round(totalMin/countCalled) + " min" : "0 min";
             document.getElementById('kpiPercentage').innerText = countCalled > 0 ? Math.round((kpiMet/countCalled)*100) + "%" : "0%";
-            document.getElementById('kpiTableBody').innerHTML = tableHtml || "<tr><td colspan='3' style='text-align:center;'>Tiada data.</td></tr>";
+            document.getElementById('kpiTableBody').innerHTML = tableHtml || "<tr><td colspan='3' style='text-align:center;'>Tiada pesakit.</td></tr>";
             renderWaitChart(chartData);
         });
     }
@@ -296,43 +301,21 @@
     function renderWaitChart(data) {
         const ctx = document.getElementById('waitingChart').getContext('2d');
         const labels = Object.keys(data).sort();
-        
-        // Simpan data total dan met untuk tooltip
-        const values = labels.map(l => ({
-            x: l,
-            y: Math.round((data[l].met / data[l].total) * 100),
-            total: data[l].total,
-            met: data[l].met
-        }));
-
+        const values = labels.map(l => ({ x: l, y: data[l].total > 0 ? Math.round((data[l].met / data[l].total) * 100) : 0, total: data[l].total, met: data[l].met }));
         if(waitChart) waitChart.destroy();
         waitChart = new Chart(ctx, { 
             type: 'bar', 
-            data: { 
-                labels: labels, 
-                datasets: [{ 
-                    label: '% Capai KPI', 
-                    data: values, 
-                    backgroundColor: '#27ae60' 
-                }] 
-            }, 
+            data: { labels: labels, datasets: [{ label: '% Capai KPI', data: values, backgroundColor: '#27ae60' }] }, 
             options: { 
-                responsive: true, 
-                maintainAspectRatio: false, 
-                scales: { y: { beginAtZero: true, max: 100 } },
+                responsive: true, maintainAspectRatio: false, 
                 plugins: {
-                    // KEMASKINI BALLOON / TOOLTIP
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (label) label += ': ' + context.parsed.y + '%';
-                                const total = context.raw.total;
-                                const met = context.raw.met;
                                 return [
-                                    label,
-                                    `Bil. Pesakit: ${total}`,
-                                    `Bil. Capai KPI: ${met}`
+                                    `Capai KPI: ${context.parsed.y}%`,
+                                    `Bil. Pesakit: ${context.raw.total}`,
+                                    `Bil. Capai KPI: ${context.raw.met}`
                                 ];
                             }
                         }
@@ -349,17 +332,14 @@
             csv += `${l.displayDate},${new Date(l.reg_timestamp).toLocaleTimeString()},${l.number},${l.ic},${l.service},${l.room},${new Date(l.call_timestamp).toLocaleTimeString()},${l.waitDuration},${l.waitDuration<=90?'CAPAI':'GAGAL'}\n`;
         });
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = `Laporan_KPI_SPGP_${dateMY(Date.now())}.csv`;
-        link.click();
+        const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Laporan_KPI_SPGP_${dateMY(Date.now())}.csv`; link.click();
     }
 
-    function resetWaitLogs() { if(confirm("Padam log KPI? Tindakan ini tidak boleh diundur.")) db.ref('queue_system/waiting_time_logs').remove(); }
+    function resetWaitLogs() { if(confirm("Padam log KPI?")) db.ref('queue_system/waiting_time_logs').remove(); }
 
     function daftarPesakit() {
         const ic = document.getElementById('patientIC').value.trim(); const sN = document.getElementById('regService').value;
-        if(!ic || !sN) return alert("Sila lengkapkan!");
+        if(!ic || !sN) return alert("Lengkapkan maklumat!");
         const pfx = (servicesData.find(s => s.name === sN) || {abjad:"A"}).abjad;
         db.ref('queue_system/last_number/' + pfx).transaction(c => (c || 0) + 1, (err, comm, snap) => {
             if(comm) {
@@ -367,9 +347,7 @@
                 db.ref('queue_system/waiting_list/' + no).set({ ic: ic, service: sN, status: "waiting", timestamp: Date.now() });
                 document.getElementById('qrcode').innerHTML = "";
                 new QRCode(document.getElementById("qrcode"), { text: `https://fadhilmarzuki.github.io/Sistem-Panggilan-Pesakit/pesakitfinal.html?no=${no}`, width: 140, height: 140 });
-                document.getElementById('regStatus').style.display = "block";
-                document.getElementById('statusText').innerHTML = `No: <b style="font-size:30px;">${no}</b>`;
-                document.getElementById('patientIC').value = "";
+                document.getElementById('regStatus').style.display = "block"; document.getElementById('statusText').innerHTML = `No: <b style="font-size:30px;">${no}</b>`; document.getElementById('patientIC').value = "";
             }
         });
     }
@@ -381,8 +359,9 @@
         db.ref('queue_system/ratings').on('value', snap => {
             let total = 0, count = 0, list = document.getElementById('ratingList'); list.innerHTML = "";
             snap.forEach(child => {
-                const r = child.val(); const rDate = new Date(r.timestamp).toLocaleDateString('en-CA');
-                if(rDate >= startD && rDate <= endD && (!selS || r.service === selS)) {
+                const r = child.val(); 
+                const rDateISO = dateLocalISO(r.timestamp);
+                if(rDateISO >= startD && rDateISO <= endD && (!selS || r.service === selS)) {
                     total += r.rating; count++;
                     list.innerHTML = `<div style="padding:8px; border-bottom:1px solid #eee;"><b>${"★".repeat(r.rating)}</b> - ${r.number} (${r.service}) - <small>${formatMY(r.timestamp)}</small></div>` + list.innerHTML;
                 }
@@ -392,16 +371,17 @@
         });
     }
 
-    function updateRatingFilters(s) {
-        const sS = document.getElementById('filterService'); const rS = document.getElementById('filterRoom');
-        const curS = sS.value; const curR = rS.value;
-        sS.innerHTML = '<option value="">Semua Unit</option>'; rS.innerHTML = '<option value="">Semua Bilik</option>';
-        (s.services || []).forEach(v => { if(v.name) sS.innerHTML += `<option value="${v.name}">${v.name}</option>`; });
-        (s.rooms || []).forEach(r => { if(r) rS.innerHTML += `<option value="${r}">${r}</option>`; });
-        sS.value = curS; rS.value = curR;
+    function updateRatingFilters() {
+        db.ref('queue_system/settings').once('value', snap => {
+            const s = snap.val(); if(!s) return;
+            const sS = document.getElementById('filterService'); sS.innerHTML = '<option value="">Semua Unit</option>';
+            (s.services || []).forEach(v => { if(v.name) sS.innerHTML += `<option value="${v.name}">${v.name}</option>`; });
+            const rS = document.getElementById('filterRoom'); rS.innerHTML = '<option value="">Semua Bilik</option>';
+            (s.rooms || []).forEach(r => { if(r) rS.innerHTML += `<option value="${r}">${r}</option>`; });
+        });
     }
 
-    function testRemoteVoice() { db.ref('queue_system/test_trigger').set(Date.now()).then(() => alert("Ujian suara dihantar!")); }
+    function testRemoteVoice() { db.ref('queue_system/test_trigger').set(Date.now()); }
 
     function saveSettings() {
         let rA = [], sA = [];
@@ -409,16 +389,10 @@
             if(document.getElementById(`roomName${i}`).value) rA.push(document.getElementById(`roomName${i}`).value);
             if(document.getElementById(`servName${i}`).value) sA.push({ name: document.getElementById(`servName${i}`).value, abjad: document.getElementById(`servAbjad${i}`).value.toUpperCase() || "A" });
         }
-        db.ref('queue_system/settings').set({ clinic_name: document.getElementById('confClinicName').value, message: document.getElementById('confMessage').value, youtube_link: document.getElementById('confYoutube').value, sound_mute: document.getElementById('confSound').value, rooms: rA, services: sA }).then(() => alert("Berjaya!"));
+        db.ref('queue_system/settings').update({ clinic_name: document.getElementById('confClinicName').value, message: document.getElementById('confMessage').value, youtube_link: document.getElementById('confYoutube').value, rooms: rA, services: sA }).then(() => alert("Berjaya!"));
     }
 
-    function confirmReset() {
-        if(confirm("Padam semua giliran?")) {
-            db.ref('queue_system/waiting_list').remove(); db.ref('queue_system/last_number').remove();
-            db.ref('queue_system/current_calling').set({ number: "---", room: "Sedia", service: "-", time: Date.now() });
-            location.reload();
-        }
-    }
+    function confirmReset() { if(confirm("Padam semua giliran?")) { db.ref('queue_system/waiting_list').remove(); db.ref('queue_system/last_number').remove(); location.reload(); } }
 
     db.ref('queue_system/waiting_list').on('value', snap => {
         const data = snap.val() || {}; let totalWaiting = 0, counts = {};
