@@ -513,8 +513,13 @@
                         }
                     }
                 }
-                if (player && player.mute) {
-                    if (currentMuteStatus == "0" && systemReady) { player.unMute(); player.setVolume(100); } else { player.mute(); }
+                if (player && typeof player.mute === 'function') {
+                    if (currentMuteStatus == "0" && systemReady) {
+                        player.unMute();
+                        player.setVolume(100);
+                    } else {
+                        player.mute();
+                    }
                 }
             }
         });
