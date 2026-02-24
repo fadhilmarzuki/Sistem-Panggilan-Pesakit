@@ -2,45 +2,67 @@
 <html lang="ms">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Stesen - Kawalan Penuh</title>
+    <title>Panel Stesen - Kawalan Penuh SPGP</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 20px; }
         .container { max-width: 550px; margin: auto; }
         .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); margin-bottom: 20px; }
         h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-top: 0; }
         label { display: block; margin-top: 15px; font-weight: bold; }
-        select, input, button { width: 100%; padding: 12px; margin-top: 8px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
-        .btn-next { background: #27ae60; color: white; border: none; font-weight: bold; cursor: pointer; height: 60px; font-size: 20px; }
-        .btn-recall { background: #e67e22; color: white; border: none; font-weight: bold; cursor: pointer; height: 50px; margin: 10px 0; }
-        .btn-back { background: #f1f2f6; color: #7f8c8d; border: 1px solid #ddd; font-weight: bold; height: 50px; }
+        select, input, button { width: 100%; padding: 12px; margin-top: 8px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; transition: 0.3s; }
+        .btn-next { background: #27ae60; color: white; border: none; font-weight: bold; cursor: pointer; height: 60px; font-size: 20px; margin-bottom: 10px; }
+        .btn-manual { background: #3498db; color: white; border: none; font-weight: bold; cursor: pointer; height: 45px; margin-top: 10px; font-size: 14px; }
+        .btn-recall { background: #e67e22; color: white; border: none; font-weight: bold; cursor: pointer; height: 50px; margin-bottom: 10px; }
+        .btn-back { background: #f1f2f6; color: #7f8c8d; border: 1px solid #ddd; font-weight: bold; cursor: pointer; height: 50px; width: 100%; }
         .display-area { background: #2c3e50; color: white; padding: 20px; border-radius: 12px; margin-top: 20px; text-align: center; }
         .curr-num { font-size: 60px; font-weight: 900; color: #f1c40f; }
-        .waiting-stat { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; }
-        #serviceLabel { padding: 5px 15px; border-radius: 20px; font-size: 14px; display: inline-block; font-weight: bold; background: #e74c3c; }
+        .waiting-stat { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; border: 1px dashed rgba(255,255,255,0.3); }
+        .coming-active { background: #27ae60 !important; animation: pulse-green 1.5s infinite; }
+        @keyframes pulse-green { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+        #serviceLabel { padding: 5px 15px; border-radius: 20px; font-size: 14px; display: inline-block; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div id="liveClock" style="text-align:center; font-weight:bold; color:#7f8c8d; margin-bottom:10px;"></div>
+    
     <div class="card">
         <h2>Konfigurasi Stesen</h2>
-        <label>Bilik / Stesen Anda:</label><select id="selectRoom"></select>
-        <label>Perkhidmatan Dipantau:</label><select id="selectService"><option value="PELBAGAI">-- PELBAGAI --</option></select>
+        <label>Bilik / Stesen Anda:</label>
+        <select id="selectRoom" onchange="updateRoomLabel()"></select>
+        
+        <label>Perkhidmatan Dipantau:</label>
+        <select id="selectService" onchange="updateWaitingCount()"><option value="PELBAGAI">-- PELBAGAI --</option></select>
+        
+        <div style="margin-top:20px; padding-top:15px; border-top:1px dashed #ddd;">
+            <label>Panggilan No. Manual:</label>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="manualNum" placeholder="Contoh: A-001" style="margin-top:0;">
+                <button class="btn-manual" onclick="manualCall()" style="margin-top:0; width: 40%;">PANGGIL</button>
+            </div>
+        </div>
     </div>
 
     <div class="card" style="text-align: center;">
         <div class="display-area">
-            <div class="waiting-stat">Baki Menunggu: <span id="waitingCount" style="color:#55efc4">0</span></div>
+            <div class="waiting-stat">Baki Menunggu: <span id="waitingCount" style="font-weight:bold; color:#55efc4">0</span> orang</div>
             <div id="roomLabel" style="font-size:18px; opacity:0.8;">-- Sedia --</div>
             <div class="curr-num" id="displayNum">---</div>
-            <div id="serviceLabel">Sedia</div>
+            <div id="serviceLabel" style="background:#e74c3c;">Sedia</div>
         </div>
+        
         <div style="margin-top: 20px;">
             <button class="btn-next" onclick="callNext()">PESAKIT SETERUSNYA</button>
             <button class="btn-recall" onclick="recallPatient()">PANGGIL SEMULA</button>
-            <button class="btn-back" onclick="undoCall()">BACK</button>
+            <button class="btn-back" onclick="undoCall()">BACK (BATAL PANGGIL)</button>
         </div>
+    </div>
+
+    <div class="card" id="transferArea" style="display:none; border-top: 5px solid #e67e22;">
+        <label>Selesai Konsultasi & Seterusnya:</label>
+        <select id="targetDest" onchange="updateTransferBtn()"></select>
+        <button id="btnTransferAction" onclick="transferPatient()" style="background:#e67e22; color:white; border:none; margin-top:15px; height:50px; font-weight:bold; cursor:pointer;">SELESAI & HANTAR</button>
     </div>
 </div>
 
@@ -51,18 +73,23 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     let session = { current: null, service: null };
+    let patientListener = null;
 
     setInterval(() => { document.getElementById('liveClock').innerText = new Date().toLocaleString('ms-MY'); }, 1000);
 
     db.ref('queue_system/settings').on('value', snap => {
         const s = snap.val(); if(!s) return;
-        const rS = document.getElementById('selectRoom'), sS = document.getElementById('selectService');
+        const rS = document.getElementById('selectRoom'), sS = document.getElementById('selectService'), tS = document.getElementById('targetDest');
         const currentR = rS.value, currentS = sS.value;
-        rS.innerHTML = '<option value="">-- Pilih Bilik --</option>'; sS.innerHTML = '<option value="PELBAGAI">-- PELBAGAI --</option>';
-        (s.rooms || []).forEach(r => { if(r) rS.innerHTML += `<option value="${r}">${r}</option>`; });
-        (s.services || []).forEach(sv => { if(sv.name) sS.innerHTML += `<option value="${sv.name}">${sv.name}</option>`; });
+        rS.innerHTML = '<option value="">-- Pilih Bilik --</option>'; 
+        sS.innerHTML = '<option value="PELBAGAI">-- PELBAGAI --</option>';
+        tS.innerHTML = '<option value="TAMAT">TAMAT (SELESAI)</option>';
+        (s.rooms || []).forEach(r => { if(r) { rS.innerHTML += `<option value="${r}">${r}</option>`; tS.innerHTML += `<option value="${r}">${r}</option>`; } });
+        (s.services || []).forEach(sv => { if(sv.name) { sS.innerHTML += `<option value="${sv.name}">${sv.name}</option>`; tS.innerHTML += `<option value="${sv.name}">${sv.name}</option>`; } });
         rS.value = currentR; sS.value = currentS;
     });
+
+    function updateRoomLabel() { document.getElementById('roomLabel').innerText = document.getElementById('selectRoom').value || "-- Sedia --"; }
 
     function updateWaitingCount() {
         const sel = document.getElementById('selectService').value;
@@ -80,22 +107,81 @@
             let found = false;
             snap.forEach(child => {
                 const p = child.val(); if((sS === "PELBAGAI" || p.service === sS) && !found) {
-                    found = true; session.current = child.key; session.service = p.service;
-                    const now = Date.now();
-                    db.ref('queue_system/waiting_time_logs').push({ number: child.key, ic: p.ic || "N/A", service: p.service, room: sR, reg_timestamp: p.timestamp, call_timestamp: now });
-                    db.ref('queue_system/waiting_list/'+child.key).update({ status: 'called', calledBy: sR });
-                    db.ref('queue_system/current_calling').set({ number: child.key, room: sR, service: p.service, time: now });
-                    document.getElementById('displayNum').innerText = child.key;
-                    document.getElementById('roomLabel').innerText = sR;
-                    document.getElementById('serviceLabel').innerText = p.service;
+                    found = true; processCall(child.key, p, sR);
                 }
             });
-            if(!found) alert("Tiada pesakit.");
+            if(!found) alert("Tiada pesakit menunggu.");
         });
     }
 
+    function manualCall() {
+        const num = document.getElementById('manualNum').value.toUpperCase().trim();
+        const sR = document.getElementById('selectRoom').value;
+        if(!sR) return alert("Pilih bilik dahulu!");
+        if(!num) return alert("Masukkan nombor!");
+        db.ref('queue_system/waiting_list/' + num).once('value', snap => {
+            if(!snap.exists()) return alert("Nombor tidak wujud!");
+            processCall(num, snap.val(), sR);
+            document.getElementById('manualNum').value = "";
+        });
+    }
+
+    function processCall(num, p, sR) {
+        session.current = num; session.service = p.service;
+        const now = Date.now();
+        db.ref('queue_system/waiting_time_logs').push({ 
+            number: num, ic: p.ic || "N/A", service: p.service, room: sR, 
+            reg_timestamp: p.timestamp, call_timestamp: now 
+        });
+        db.ref('queue_system/waiting_list/'+num).update({ status: 'called', calledBy: sR, isComing: false });
+        db.ref('queue_system/current_calling').set({ number: num, room: sR, service: p.service, time: now });
+        document.getElementById('displayNum').innerText = num;
+        document.getElementById('roomLabel').innerText = sR;
+        document.getElementById('serviceLabel').innerText = p.service;
+        document.getElementById('transferArea').style.display = 'block';
+        listenForPatientStatus(num);
+    }
+
+    function listenForPatientStatus(num) {
+        if(patientListener) patientListener.off();
+        patientListener = db.ref('queue_system/waiting_list/' + num);
+        patientListener.on('value', snap => {
+            const data = snap.val(); const label = document.getElementById('serviceLabel');
+            if(data && data.isComing) { label.innerText = "PESAKIT MENUJU KE SANA"; label.classList.add('coming-active'); }
+            else if(data) { label.innerText = data.service; label.classList.remove('coming-active'); }
+        });
+    }
+
+    function updateTransferBtn() {
+        const t = document.getElementById('targetDest').value;
+        document.getElementById('btnTransferAction').innerText = (t === "TAMAT") ? "SELESAI & TAMAT" : "SELESAI & HANTAR";
+    }
+
+    function transferPatient() {
+        const target = document.getElementById('targetDest').value; 
+        if(!session.current) return;
+        const updateData = (target === "TAMAT") ? { status: 'completed' } : { status:'waiting', service:target, timestamp: Date.now() };
+        db.ref('queue_system/waiting_list/'+session.current).update({ ...updateData, isComing: false, lastRecall: null })
+        .then(() => { resetUI(); alert("Selesai!"); });
+    }
+
     function recallPatient() { if(!session.current) return; db.ref('queue_system/current_calling').update({ time: Date.now() }); }
-    function undoCall() { if(!session.current) return; db.ref('queue_system/waiting_list/'+session.current).update({ status: 'waiting' }); location.reload(); }
+    
+    function undoCall() { 
+        if(!session.current) return; 
+        if(confirm("Kembalikan nombor ke senarai menunggu?")) {
+            db.ref('queue_system/waiting_list/'+session.current).update({ status: 'waiting', isComing: false }); 
+            resetUI();
+        }
+    }
+
+    function resetUI() {
+        session.current = null;
+        document.getElementById('displayNum').innerText = "---";
+        document.getElementById('transferArea').style.display = 'none';
+        document.getElementById('serviceLabel').classList.remove('coming-active');
+        if(patientListener) patientListener.off();
+    }
 </script>
 </body>
 </html>
