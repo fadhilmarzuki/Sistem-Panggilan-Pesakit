@@ -392,6 +392,10 @@
             }
         });
 
+        db.ref('queue_system/test_trigger').on('value', snap => {
+            if (systemReady) playAlert();
+        });
+
         db.ref('queue_system/current_calling').on('value', snap => {
             const d = snap.val();
             if (!d) return;
