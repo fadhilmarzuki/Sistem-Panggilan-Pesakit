@@ -355,6 +355,13 @@
 
         function onPlayerReady(event) {
             if (systemReady) player.playVideo();
+            // Apply latest settings once ready
+            if (currentPlaylistID) {
+                player.loadPlaylist({ list: currentPlaylistID, listType: 'playlist', index: 0, startSeconds: 0 });
+            } else if (currentVideoID) {
+                player.loadVideoById({ videoId: currentVideoID });
+            }
+            if (currentMuteStatus == "0" && systemReady) { player.unMute(); player.setVolume(100); } else { player.mute(); }
         }
 
         function onPlayerStateChange(event) {
@@ -460,6 +467,10 @@
         function extractIDs(url) {
             let vID = "", pID = "";
             if (!url) return { videoId: "", playlistId: "" };
+            // Support plain 11-char ID
+            if (url.length === 11 && !url.includes("/") && !url.includes(".")) {
+                return { videoId: url, playlistId: "" };
+            }
             const vMatch = url.match(/(?:v=|\/v\/|embed\/|youtu\.be\/|\/watch\?v=)([^#&?]*)/);
             if (vMatch) vID = vMatch[1];
             const pMatch = url.match(/[?&]list=([^#&?]*)/);
