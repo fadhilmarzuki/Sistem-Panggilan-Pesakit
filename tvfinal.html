@@ -380,22 +380,25 @@
             const voices = window.speechSynthesis.getVoices();
             if (!voices.length) return;
 
-            // Priority 1: High Quality Google Malay (Chrome Preferred)
+            // Strict Priority 1: Google Bahasa Melayu (Female, very fluent)
             malayVoice = voices.find(v => v.name === 'Google Bahasa Melayu');
 
-            // Priority 2: Any Microsoft Malay (Edge Preferred)
-            if (!malayVoice) malayVoice = voices.find(v => v.name.includes('Yasmin') || v.name.includes('Osman'));
+            // Strict Priority 2: Microsoft Yasmin (Neural Malaysia - Edge)
+            if (!malayVoice) malayVoice = voices.find(v => v.name.includes('Yasmin'));
 
-            // Priority 3: General Malay language match
-            if (!malayVoice) malayVoice = voices.find(v => v.lang === 'ms-MY' || v.lang.startsWith('ms'));
+            // Strict Priority 3: MS-MY lang tag (Malaysia) but EXCLUDE Indonesian
+            if (!malayVoice) malayVoice = voices.find(v => v.lang === 'ms-MY' || v.lang === 'ms_MY');
 
-            // Priority 4: Indonesian fallback (similar sound)
-            if (!malayVoice) malayVoice = voices.find(v => v.lang === 'id-ID' || v.lang.startsWith('id'));
+            // Extreme Fallback 1: Any Malay that doesn't say Indonesia
+            if (!malayVoice) malayVoice = voices.find(v => v.lang.startsWith('ms') && !v.lang.includes('ID'));
 
-            // Priority 5: Zira or any local female voice (as last resort)
-            if (!malayVoice) malayVoice = voices.find(v => v.name.includes('Zira') || v.name.includes('Female'));
+            // Extreme Fallback 2: Local Zira or Osman
+            if (!malayVoice) malayVoice = voices.find(v => v.name.includes('Zira') || v.name.includes('Osman'));
 
-            console.log("Selected Voice:", malayVoice ? malayVoice.name : "System Default");
+            // Final Resort only: Indonesian (if absolutely no MS-MY is found)
+            if (!malayVoice) malayVoice = voices.find(v => v.lang.includes('id') || v.lang.includes('ID'));
+
+            console.log("Selected Voice:", malayVoice ? `${malayVoice.name} (${malayVoice.lang})` : "System Default");
         }
         window.speechSynthesis.onvoiceschanged = loadVoices;
         loadVoices();
