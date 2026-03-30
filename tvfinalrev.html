@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="ms">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Smart TV - SPGP (Ultimate Stable)</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial Black', sans-serif;
+            background: #2c3e50;
+            overflow: hidden;
+            color: white;
+        }
+
+        .header-container {
+            display: flex;
+            height: 15vh;
+            border-bottom: 5px solid #fff;
+        }
+
+        .main-container {
+            display: flex;
+            height: 75vh;
+        }
+
+        .footer-container {
+            height: 10vh;
+            background: #1a73e8;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            border-top: 5px solid #fff;
+            position: relative;
+            z-index: 10;
+        }
+
+        .header-left {
+            width: 70%;
+            background: #1a73e8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-right: 5px solid #fff;
+            padding: 10px 30px;
+            text-align: center;
+        }
+
+        #clinicName {
+            font-size: clamp(25px, 4vw, 55px);
+            line-height: 1.1;
+            display: block;
+            width: 100%;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            text-transform: uppercase;
+        }
+
+        .header-right {
+            width: 30%;
+            background: #e74c3c;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .video-section {
+            width: 70%;
+            background: #000;
+            border-right: 5px solid #fff;
+            position: relative;
+        }
+
+        #ytPlayer {
+            width: 100%;
+            height: 100%;
+        }
+
+        .queue-section {
+            width: 30%;
+            background: #fff;
+            color: #2c3e50;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .current-call {
+            height: 40%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 3px solid #eee;
+            padding: 15px;
+            overflow: hidden;
+        }
+
+        .label-now {
+            font-size: clamp(14px, 2vmin, 20px);
+            color: #e74c3c;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .num-now {
+            font-size: clamp(50px, 8vw, 140px);
+            font-weight: 900;
+            color: #2c3e50;
+            line-height: 0.9;
+            margin: 5px 0;
+            text-align: center;
+            width: 100%;
+            word-wrap: break-word;
+        }
+
+        .room-now {
+            font-size: clamp(20px, 3vw, 40px);
+            font-weight: bold;
+            color: #1a73e8;
+            text-align: center;
+            width: 100%;
+            line-height: 1;
+        }
+
+        .history-section {
+            height: 60%;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .history-title {
+            text-align: center;
+            font-size: clamp(10px, 1.8vmin, 16px);
+            color: #7f8c8d;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            margin-bottom: 8px;
+            flex-shrink: 0;
+            font-weight: 900;
+        }
+
+        .history-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: repeat(3, 1fr);
+            gap: 1vmin;
+            flex-grow: 1;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .history-item {
+            background: #fcfcfc;
+            border: 3px solid #e1e4e8;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+            height: 100%;
+            min-height: 0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .h-num {
+            font-size: clamp(20px, 4.5vmin, 50px);
+            font-weight: 900;
+            color: #2c3e50;
+            line-height: 0.95;
+        }
+
+        .h-room {
+            font-size: clamp(10px, 1.8vmin, 18px);
+            color: #1a73e8;
+            font-weight: 900;
+            text-align: center;
+            text-transform: uppercase;
+            margin-top: 2px;
+            line-height: 1;
+        }
+
+        #tvTime {
+            font-size: clamp(20px, 5vmin, 38px);
+            font-weight: bold;
+        }
+
+        #tvDate {
+            font-size: clamp(12px, 2vmin, 18px);
+            opacity: 0.9;
+        }
+
+        .marquee {
+            white-space: nowrap;
+            font-size: clamp(18px, 4vmin, 28px);
+            animation: marquee 25s linear infinite;
+            padding-left: 100%;
+            font-weight: bold;
+            will-change: transform;
+        }
+
+        @keyframes marquee {
+            0% {
+                transform: translate(0, 0);
+            }
+
+            100% {
+                transform: translate(-100%, 0);
+            }
+        }
+
+        #overlay {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.98);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #startBtn {
+            padding: 30px 60px;
+            font-size: 35px;
+            cursor: pointer;
+            background: #27ae60;
+            color: white;
+            border: 5px solid white;
+            border-radius: 20px;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        #startBtn:focus {
+            transform: scale(1.1);
+            background: #2ecc71;
+            box-shadow: 0 0 30px #27ae60;
+        }
+
+        .blink {
+            animation: blinker 0.6s linear 5;
+        }
+
+        @keyframes blinker {
+            50% {
+                opacity: 0.3;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="overlay">
+        <h1 style="color:white; margin-bottom:10px; text-align: center; padding: 0 20px;">SISTEM PANGGILAN GILIRAN
+            PESAKIT (SPGP)</h1>
+        <p style="color:white; opacity:0.8; margin-bottom:30px;">Tekan butang 'OK' atau 'ENTER' pada remote untuk mula
+        </p>
+        <button id="startBtn" onclick="initTV()" autofocus>MULA PAPARAN TV</button>
+    </div>
+
+    <div class="header-container">
+        <div class="header-left">
+            <div id="clinicName">KK KEDAH</div>
+        </div>
+        <div class="header-right">
+            <div id="tvTime">00:00:00</div>
+            <div id="tvDate">Memuatkan...</div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="video-section">
+            <div id="ytPlayer"></div>
+        </div>
+        <div class="queue-section">
+            <div class="current-call" id="currentCallContainer">
+                <div class="label-now">PANGGILAN TERKINI</div>
+                <div id="tvNum" class="num-now">---</div>
+                <div id="tvRoom" class="room-now">SEDIA</div>
+            </div>
+            <div class="history-section">
+                <div class="history-title">SENARAI GILIRAN AKTIF</div>
+                <div id="historyGrid" class="history-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-container">
+        <div class="marquee" id="tvMarquee">Selamat Datang ke Klinik Kesihatan.</div>
+    </div>
+
+    <audio id="alertSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"
+        preload="auto"></audio>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBRK634U8ER_ZFOi1SV9nu8McndUWdD-rg",
+            databaseURL: "https://sistem-panggilan-pelanggan-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let player, malayVoice, systemReady = false;
+        let currentVideoID = "77ZozI0rw7w";
+        let currentPlaylistID = "";
+        let currentMuteStatus = "1";
+        let lastYoutubeURL = "";
+
+        window.onload = function () {
+            document.getElementById('startBtn').focus();
+        };
+
+        window.addEventListener('keydown', function (e) {
+            if (!systemReady) initTV();
+        });
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('ytPlayer', {
+                height: '100%', width: '100%',
+                playerVars: {
+                    'autoplay': 1, 'mute': 1, 'loop': 1, 'controls': 0,
+                    'rel': 0, 'modestbranding': 1,
+                    'list': currentPlaylistID || undefined,
+                    'listType': currentPlaylistID ? 'playlist' : undefined,
+                    'playlist': currentPlaylistID ? undefined : currentVideoID
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            if (systemReady) player.playVideo();
+            // Apply latest settings once ready
+            if (currentPlaylistID) {
+                player.loadPlaylist({ list: currentPlaylistID, listType: 'playlist', index: 0, startSeconds: 0 });
+            } else if (currentVideoID) {
+                player.loadVideoById({ videoId: currentVideoID });
+            }
+            if (currentMuteStatus == "0" && systemReady) { player.unMute(); player.setVolume(100); } else { player.mute(); }
+        }
+
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.ENDED) {
+                if (currentPlaylistID) {
+                    const idx = player.getPlaylistIndex();
+                    const list = player.getPlaylist();
+                    if (idx === list.length - 1) player.playVideoAt(0);
+                } else {
+                    player.playVideo();
+                }
+            }
+        }
+
+        function loadVoices() {
+            const voices = window.speechSynthesis.getVoices();
+            if (!voices.length) return;
+
+            malayVoice = voices.find(v => v.name === 'Google Bahasa Melayu');
+            if (!malayVoice) malayVoice = voices.find(v => v.name.includes('Yasmin'));
+            if (!malayVoice) malayVoice = voices.find(v => v.lang === 'ms-MY' || v.lang === 'ms_MY');
+            if (!malayVoice) malayVoice = voices.find(v => v.lang.startsWith('ms') && !v.lang.includes('ID'));
+            if (!malayVoice) malayVoice = voices.find(v => v.name.includes('Zira') || v.name.includes('Osman'));
+            if (!malayVoice) malayVoice = voices.find(v => v.lang.includes('id') || v.lang.includes('ID'));
+        }
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+        loadVoices();
+
+        function toMalayWords(text, spellOut = true) {
+            const map = { '0': 'kosong', '1': 'satu', '2': 'dua', '3': 'tiga', '4': 'empat', '5': 'lima', '6': 'enam', '7': 'tujuh', '8': 'lapan', '9': 'sembilan' };
+            if (spellOut) {
+                let chars = text.toString().split('');
+                return chars.map((char, index) => {
+                    let word = map[char] || char;
+                    return (index === 0 && isNaN(char)) ? word + ' , ' : word;
+                }).join(' ');
+            } else {
+                return text.toString().toLowerCase().replace(/[0-9]/g, (digit) => ' ' + map[digit] + ' ');
+            }
+        }
+
+        function playAlert() {
+            const sound = document.getElementById('alertSound');
+            if (sound) { sound.currentTime = 0; sound.play().catch(e => console.log("Audio trigger blocked")); }
+        }
+
+        function announce(num, room) {
+            if (!systemReady) return;
+            const msg = new SpeechSynthesisUtterance(`Nombor, ${toMalayWords(num, true)}. Sila ke ${toMalayWords(room, false)}.`);
+
+            if (malayVoice) {
+                msg.voice = malayVoice;
+                msg.lang = malayVoice.lang;
+            } else {
+                msg.lang = 'ms-MY';
+            }
+
+            msg.rate = 0.85;
+            msg.onend = () => { if (player && currentMuteStatus == "0") player.setVolume(100); };
+            window.speechSynthesis.speak(msg);
+        }
+
+        function extractIDs(url) {
+            if (!url) return { videoId: "", playlistId: "" };
+            
+            if (url.length === 11 && !url.includes("/") && !url.includes(".")) {
+                return { videoId: url, playlistId: "" };
+            }
+            
+            const vMatch = url.match(/(?:(?:v|vi|be|embed|shorts|live)\/|v=)([\w-]{11})/);
+            const pMatch = url.match(/[?&]list=([\w-]+)/);
+            
+            return { 
+                videoId: vMatch ? vMatch[1] : "", 
+                playlistId: pMatch ? pMatch[1] : "" 
+            };
+        }
+
+        function initTV() {
+            if (systemReady) return;
+            document.getElementById('overlay').style.display = 'none';
+            systemReady = true;
+            window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
+            if (player) {
+                player.playVideo();
+                if (currentMuteStatus == "0") { player.unMute(); player.setVolume(100); } else { player.mute(); }
+            }
+        }
+
+        db.ref('queue_system/settings').on('value', snap => {
+            const s = snap.val();
+            if (s) {
+                document.getElementById('clinicName').innerText = (s.clinic_name || "KK KEDAH").toUpperCase();
+                document.getElementById('tvMarquee').innerText = s.message || "Selamat Datang...";
+
+                const rawURL = s.youtube_link || "";
+                currentMuteStatus = s.sound_mute !== undefined ? s.sound_mute : "1";
+
+                if (rawURL !== lastYoutubeURL) {
+                    lastYoutubeURL = rawURL;
+                    const ids = extractIDs(rawURL);
+                    currentPlaylistID = ids.playlistId;
+                    currentVideoID = ids.videoId;
+                    if (player && player.loadPlaylist) {
+                        if (currentPlaylistID) {
+                            player.loadPlaylist({ list: currentPlaylistID, listType: 'playlist', index: 0, startSeconds: 0 });
+                        } else if (currentVideoID) {
+                            player.loadVideoById({ videoId: currentVideoID });
+                        }
+                    }
+                }
+                if (player && typeof player.mute === 'function') {
+                    if (currentMuteStatus == "0" && systemReady) {
+                        player.unMute();
+                        player.setVolume(100);
+                    } else {
+                        player.mute();
+                    }
+                }
+            }
+        });
+
+        db.ref('queue_system/test_trigger').on('value', snap => {
+            if (systemReady) playAlert();
+        });
+
+        db.ref('queue_system/current_calling').on('value', snap => {
+            const d = snap.val();
+            if (d && systemReady) {
+                if (player && currentMuteStatus == "0") player.setVolume(20);
+                document.getElementById('tvNum').innerText = d.number;
+                document.getElementById('tvRoom').innerText = d.room;
+                
+                const card = document.getElementById('currentCallContainer');
+                if (card) { card.classList.remove('blink'); void card.offsetWidth; card.classList.add('blink'); }
+                
+                if (d.number !== "---") {
+                    playAlert();
+                    setTimeout(() => announce(d.number, d.room), 1200);
+
+                    // Pemasangan Fallback restorasi pengemaskinian bunyi dari TV
+                    setTimeout(() => {
+                        if (player && currentMuteStatus == "0" && typeof player.setVolume === 'function') {
+                            player.setVolume(100);
+                        }
+                    }, 10000); 
+                }
+            }
+        });
+
+        db.ref('queue_system/waiting_list').on('value', snap => {
+            const list = snap.val(); if (!list) return;
+            const historyData = Object.keys(list).map(k => ({ number: k, ...list[k] })).filter(i => i.status === 'called').sort((a, b) => b.timestamp - a.timestamp).slice(0, 6);
+            const grid = document.getElementById('historyGrid');
+            if (grid) {
+                grid.innerHTML = historyData.map(item => `<div class="history-item"><div class="h-num">${item.number}</div><div class="h-room">${item.calledBy || 'Bilik'}</div></div>`).join('');
+            }
+        });
+
+        function updateClock() {
+            const now = new Date();
+            const timeEl = document.getElementById('tvTime'), dateEl = document.getElementById('tvDate');
+            if (timeEl) timeEl.innerText = now.toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }).toUpperCase();
+            if (dateEl) dateEl.innerText = now.toLocaleDateString('ms-MY', { weekday: 'short', day: 'numeric', month: 'short' });
+        }
+        setInterval(updateClock, 1000); updateClock();
+    </script>
+</body>
+
+</html>
